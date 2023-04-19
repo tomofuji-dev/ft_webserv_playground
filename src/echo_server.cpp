@@ -66,7 +66,8 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    ev.events = EPOLLIN;
+    ev.events = EPOLLIN | EPOLLPRI | EPOLLRDHUP | EPOLLOUT | EPOLLET;
+    // ev.events = EPOLLIN | EPOLLET;
     ev.data.fd = server_fd;
 
     // Add server socket to epoll
@@ -100,7 +101,7 @@ int main() {
                     continue;
                 }
 
-                ev.events = EPOLLIN | EPOLLET;
+                ev.events = EPOLLIN | EPOLLPRI | EPOLLRDHUP | EPOLLOUT | EPOLLET;
                 ev.data.fd = client_fd;
 
                 if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, client_fd, &ev) == -1) {
@@ -110,29 +111,60 @@ int main() {
                 }
 
                 printf("New client connected: %d\n", client_fd);
-            } else {
-                // Handle data from client
-                int client_fd = events[i].data.fd;
-                char buffer[BUFFER_SIZE];
-                ssize_t bytes_received;
-
-                while ((bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0)) > 0) {
-                    printf("Received from client %d: %.*s", client_fd, (int)bytes_received, buffer);
-
-                    ssize_t bytes_sent = send(client_fd, buffer, bytes_received, 0);
-                    if (bytes_sent == -1) {
-                        perror("send");
-                        break;
-                    }
-                }
-
-                if (bytes_received == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-                    perror("recv");
-                }
-
-                printf("Client disconnected: %d\n", client_fd);
-                close(client_fd);
             }
+			else {
+				// Handle data from client
+				int client_fd = events[i].data.fd;
+				char buffer[BUFFER_SIZE];
+				ssize_t bytes_received;
+
+				if (events[i].events & EPOLLIN) {
+
+					while ((bytes_received = recv(client_fd, buffer, BUFFER_SIZE, 0)) > 0) {
+						printf("Received from client %d: %.*s", client_fd, (int)bytes_received, buffer);
+
+						ssize_t bytes_sent = send(client_fd, buffer, bytes_received, 0);
+						if (bytes_sent == -1) {
+							perror("send");
+							break;
+						}
+					}
+
+					if (bytes_received == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+						perror("recv");
+					}
+				}
+				else if (events[i].events & EPOLLPRI) {
+					while ((bytes_received = recv(client_fd, buffer, BUFFER_SIZE, MSG_OOB)) > 0) {
+						printf("Received OOB from client %d: %.*s", client_fd, (int)bytes_received, buffer);
+
+						ssize_t bytes_sent = send(client_fd, buffer, bytes_received, 0);
+                        if (bytes_received == 0) {
+                            printf("Client disconnected: %d\n", client_fd);
+                            close(client_fd);
+                        }
+						else if (bytes_sent == -1) {
+							perror("send");
+							break;
+						}
+					}
+					
+					if (bytes_received == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+						perror("recv");
+					}
+				}
+				else if (events[i].events & EPOLLRDHUP) {
+                    shutdown(client_fd, SHUT_RD);
+                    // 残りのデータを送信
+					shutdown(client_fd, SHUT_WR);
+				}
+				else if (events[i].events & EPOLLOUT) {
+					printf("Get ready to write %d.\n", client_fd);
+				}
+				else if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP) {
+					close(client_fd);
+				}
+			}
         }
     }
 

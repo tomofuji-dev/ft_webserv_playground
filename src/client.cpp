@@ -42,8 +42,8 @@ int main() {
     if (connect(client_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         return 1;
     }
+	std::cout << "connected" << std::endl;
     while ((bytes_read = read(STDIN_FILENO, buf, 1024)) > 0) { // read from stdin
-	    std::cout << "connected" << std::endl;
         send(client_fd, buf, bytes_read, 0);
         bytes_read = recv(client_fd, buf, 1024, 0);
         write(STDOUT_FILENO, buf, bytes_read);
