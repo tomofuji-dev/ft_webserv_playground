@@ -134,7 +134,7 @@ int main() {
 						perror("recv");
 					}
 				}
-				else if (events[i].events & EPOLLPRI) {
+				if (events[i].events & EPOLLPRI) {
 					while ((bytes_received = recv(client_fd, buffer, BUFFER_SIZE, MSG_OOB)) > 0) {
 						printf("Received OOB from client %d: %.*s", client_fd, (int)bytes_received, buffer);
 
@@ -153,16 +153,23 @@ int main() {
 						perror("recv");
 					}
 				}
-				else if (events[i].events & EPOLLRDHUP) {
+			    if (events[i].events & EPOLLRDHUP) {
                     shutdown(client_fd, SHUT_RD);
                     // 残りのデータを送信
 					shutdown(client_fd, SHUT_WR);
+                    if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr) == -1) {
+                        perror("epoll_ctl");
+                    }
+                    close(client_fd);
 				}
-				else if (events[i].events & EPOLLOUT) {
+				if (events[i].events & EPOLLOUT) {
 					printf("Get ready to write %d.\n", client_fd);
 				}
-				else if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP) {
-					close(client_fd);
+				if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP) {
+                    if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, nullptr) == -1) {
+                        perror("epoll_ctl");
+                    }
+                    close(client_fd);
 				}
 			}
         }
