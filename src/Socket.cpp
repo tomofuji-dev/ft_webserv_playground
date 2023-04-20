@@ -83,8 +83,7 @@ int ConnSocket::OnReadable(int recv_flag) {
 
   errno = 0;
   while (true) {
-  bytes_read = recv(fd_, buffer, sizeof(buffer), recv_flag);
-
+    bytes_read = recv(fd_, buffer, sizeof(buffer), recv_flag);
     if (bytes_read > 0) {
       recv_buffer_.insert(recv_buffer_.end(), buffer, buffer + bytes_read);
 
@@ -93,16 +92,17 @@ int ConnSocket::OnReadable(int recv_flag) {
         // エコーサーバーの場合、recv_bufferをsend_bufferにコピーする
         // HTTPの場合、返信内容をsend_bufferに作成して、recv_bufferを\r\n\r\n以降のものに書き換える
         OnMessageReceived();
-      } else if (bytes_read == 0) {
-        // クライアントが接続を閉じた場合: 呼び出し側でfdを閉じる必要がある
-        return FAILURE;
-      } else if (errno != EAGAIN) {
-        // read, recvが失敗した場合: 呼び出し側でfdを閉じる
-        return FAILURE;
-      } else {
-        // 受信バッファが空の場合など、読み込み準備ができていない
-        return SUCCESS;
-      }
+      } 
+    }
+    else if (bytes_read == 0) {
+      // クライアントが接続を閉じた場合: 呼び出し側でfdを閉じる必要がある
+      return FAILURE;
+    } else if (errno != EAGAIN) {
+      // read, recvが失敗した場合: 呼び出し側でfdを閉じる
+      return FAILURE;
+    } else {
+      // 受信バッファが空の場合など、読み込み準備ができていない
+      return SUCCESS;
     }
   }
   return SUCCESS;
