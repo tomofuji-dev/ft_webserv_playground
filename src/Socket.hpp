@@ -28,8 +28,8 @@ class ASocket
 class ConnSocket : public ASocket
 {
   private:
-    std::vector<char>	recv_buffer_;
-    std::vector<char>	send_buffer_;
+    std::vector<char> recv_buffer_;
+    std::vector<char> send_buffer_;
 
     void on_message_received();
     bool is_message_complete() const;
@@ -57,9 +57,9 @@ class ListenSocket : public ASocket
     ~ListenSocket();
     ListenSocket& operator=(const ListenSocket& rhs);
 
-    int			Create();
-    int			Passive(int port);
-    ConnSocket*	Accept();
+    int         Create();
+    int         Passive(int port);
+    ConnSocket* Accept();
 };
 
 #endif

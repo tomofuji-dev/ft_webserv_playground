@@ -4,9 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "Socket.hpp"
-
-#define FAILURE -1
-#define SUCCESS 0
+#include "define.hpp"
 
 // ------------------------------------------------------------------
 // 継承用のクラス
@@ -152,5 +150,27 @@ int ListenSocket::Passive(int port) {
   // Bind server socket to address
   if (bind(fd_, (struct sockaddr *)&sockaddr_, sizeof(sockaddr_)) == -1) {
     // error handling
+    return FAILURE;
   }
+  if (listen(fd_, SOMAXCONN) == -1) {
+    return FAILURE;
+  }
+  return SUCCESS;
 }
+
+ConnSocket* ListenSocket::Accept() {
+  ConnSocket* conn_socket = new ConnSocket();
+  socklen_t addrlen = sizeof(conn_socket->sockaddr_);
+
+  conn_socket->fd_ = accept(fd_, (struct sockaddr *)&conn_socket->sockaddr_, &addrlen);
+  if (conn_socket->fd_ < 0) {
+    delete conn_socket;
+    return NULL;
+  }
+  if (conn_socket->set_non_blocking() == FAILURE) {
+    delete conn_socket;
+    return NULL;
+  }
+  return conn_socket;
+}
+
