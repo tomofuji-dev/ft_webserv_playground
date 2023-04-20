@@ -1,10 +1,12 @@
+#include "Socket.hpp"
+#include "define.hpp"
 #include <vector>
 #include <string>
 #include <sys/epoll.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "Socket.hpp"
-#include "define.hpp"
+#include <string.h>
+#include <errno.h>
 
 // ------------------------------------------------------------------
 // 継承用のクラス
@@ -26,11 +28,19 @@ ASocket& ASocket::operator=(const ASocket& rhs) {
   return *this;
 }
 
-int ASocket::fd() const {
+int ASocket::GetFd() const {
   return fd_;
 }
 
-int ASocket::set_non_blocking() const {
+void ASocket::SetFd(int fd) {
+  fd_ = fd;
+}
+
+struct sockaddr_in* ASocket::GetSockaddr() {
+  return &sockaddr_;
+}
+
+int ASocket::SetNonBlocking() const {
   int flags = fcntl(fd_, F_GETFL, 0);
   if (flags == -1) {
     return FAILURE;
@@ -57,18 +67,18 @@ ConnSocket& ConnSocket::operator=(const ConnSocket& rhs) {
   return *this; 
 }
 
-void ConnSocket::on_message_received() {
+void ConnSocket::OnMessageReceived() {
   send_buffer_.insert(send_buffer_.end(), recv_buffer_.begin(), recv_buffer_.end());
   recv_buffer_.erase(recv_buffer_.begin(), recv_buffer_.end());
 }
 
-bool ConnSocket::is_message_complete() const {
+bool ConnSocket::IsMessageComplete() const {
   return true;
 }
 
 // 0: 引き続きsocketを利用 -1: socketを閉じる
-int ConnSocket::on_readable(int recv_flag) {
-  char  buffer[1024];
+int ConnSocket::OnReadable(int recv_flag) {
+  char  buffer[BUFFER_SIZE];
   ssize_t bytes_read;
 
   errno = 0;
@@ -79,10 +89,10 @@ int ConnSocket::on_readable(int recv_flag) {
       recv_buffer_.insert(recv_buffer_.end(), buffer, buffer + bytes_read);
 
       // Check if the message is complete and notify the application
-      if (is_message_complete()) {
+      if (IsMessageComplete()) {
         // エコーサーバーの場合、recv_bufferをsend_bufferにコピーする
         // HTTPの場合、返信内容をsend_bufferに作成して、recv_bufferを\r\n\r\n以降のものに書き換える
-        on_message_received();
+        OnMessageReceived();
       } else if (bytes_read == 0) {
         // クライアントが接続を閉じた場合: 呼び出し側でfdを閉じる必要がある
         return FAILURE;
@@ -99,7 +109,7 @@ int ConnSocket::on_readable(int recv_flag) {
 }
 
 // 0: 引き続きsocketを利用 -1: socketを閉じる
-int ConnSocket::on_writable() {
+int ConnSocket::OnWritable() {
   ssize_t bytes_written;
   
   errno = 0;
@@ -120,7 +130,6 @@ int ConnSocket::on_writable() {
 // ------------------------------------------------------------------
 // listen用のソケット
 
-// fd_ == -1 チェックが必要
 ListenSocket::ListenSocket(): ASocket() {}
 
 ListenSocket::ListenSocket(const ListenSocket& src): ASocket(src) {}
@@ -139,7 +148,7 @@ int ListenSocket::Create() {
   if (fd_ < 0) {
     return FAILURE;
   }
-  return set_non_blocking();
+  return SetNonBlocking();
 }
 
 int ListenSocket::Passive(int port) {
@@ -160,14 +169,15 @@ int ListenSocket::Passive(int port) {
 
 ConnSocket* ListenSocket::Accept() {
   ConnSocket* conn_socket = new ConnSocket();
-  socklen_t addrlen = sizeof(conn_socket->sockaddr_);
+  struct sockaddr_in* client_addr = conn_socket->GetSockaddr();
+  socklen_t addrlen = sizeof(*client_addr);
 
-  conn_socket->fd_ = accept(fd_, (struct sockaddr *)&conn_socket->sockaddr_, &addrlen);
-  if (conn_socket->fd_ < 0) {
+  conn_socket->SetFd(accept(fd_, (struct sockaddr *)client_addr, &addrlen));
+  if (conn_socket->GetFd() < 0) {
     delete conn_socket;
     return NULL;
   }
-  if (conn_socket->set_non_blocking() == FAILURE) {
+  if (conn_socket->SetNonBlocking() == FAILURE) {
     delete conn_socket;
     return NULL;
   }

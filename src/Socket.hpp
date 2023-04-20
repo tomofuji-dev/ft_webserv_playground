@@ -2,13 +2,14 @@
 #define _SOCKET_HPP_
 
 #include <vector>
+#include <netinet/in.h>
 
 // ------------------------------------------------------------------
 // 継承用のクラス
 
 class ASocket
 {
-  private:
+  protected:
     int                 fd_;
     struct sockaddr_in  sockaddr_;
 
@@ -18,8 +19,10 @@ class ASocket
     virtual ~ASocket();
     ASocket& operator=(const ASocket& rhs);
 
-    int fd() const;
-    int set_non_blocking() const;
+    int   GetFd() const;
+    void  SetFd(int fd);
+    int   SetNonBlocking() const;
+    struct sockaddr_in*  GetSockaddr();
 };
 
 // ------------------------------------------------------------------
@@ -31,17 +34,17 @@ class ConnSocket : public ASocket
     std::vector<char> recv_buffer_;
     std::vector<char> send_buffer_;
 
-    void on_message_received();
-    bool is_message_complete() const;
+    void OnMessageReceived();
+    bool IsMessageComplete() const;
 
   public:
-    ConnSocket(int fd);
+    ConnSocket();
     ConnSocket(const ConnSocket& src);
     ~ConnSocket();
     ConnSocket& operator=(const ConnSocket& rhs);
 
-    int on_readable(int recv_flag);
-    int on_writable();
+    int OnReadable(int recv_flag);
+    int OnWritable();
 };
 
 // ------------------------------------------------------------------
@@ -52,7 +55,7 @@ class ListenSocket : public ASocket
   private:
 
   public:
-    ListenSocket(int fd);
+    ListenSocket();
     ListenSocket(const ListenSocket& src);
     ~ListenSocket();
     ListenSocket& operator=(const ListenSocket& rhs);

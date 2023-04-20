@@ -1,8 +1,8 @@
 #ifndef _EPOLL_HPP_
 #define _EPOLL_HPP_
 
-#include <map>
 #include "Socket.hpp"
+#include <map>
 
 class Epoll {
 	private:
@@ -15,9 +15,11 @@ class Epoll {
 		~Epoll();
 		Epoll& operator=(const Epoll& rhs);
 
-		int add(ASocket* socket, int option, uint32_t event_mask);
-		int del(int fd);
-		int wait(struct epoll_event* events, int maxevents, int timeout);
+		ASocket*	GetSocket(int fd);
+		int 			Create();
+		int 			Add(ASocket* socket, uint32_t event_mask);
+		int 			Del(int fd);
+		int 			Wait(struct epoll_event* events, int maxevents, int timeout);
 };
 
 #endif
