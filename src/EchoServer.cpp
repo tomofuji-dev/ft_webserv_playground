@@ -60,7 +60,6 @@ int process_client_socket(Epoll* epoll_map, int event_fd, uint32_t event_mask) {
 	}
 	if (event_mask & EPOLLIN) {
 		// 受信
-		std::cout << "epollin" << std::endl;
 		if (client_socket->OnReadable(0) == FAILURE) {
 			epoll_map->Del(client_socket->GetFd());
 			return FAILURE;
@@ -68,7 +67,6 @@ int process_client_socket(Epoll* epoll_map, int event_fd, uint32_t event_mask) {
 	}
 	if (event_mask & EPOLLPRI) {
 		// 緊急メッセージ
-		std::cout << "epollpri" << std::endl;
 		if (client_socket->OnReadable(MSG_OOB) == FAILURE) {
 			epoll_map->Del(client_socket->GetFd());
 			return FAILURE;
@@ -76,7 +74,6 @@ int process_client_socket(Epoll* epoll_map, int event_fd, uint32_t event_mask) {
 	}
 	if (event_mask & EPOLLOUT) {
 		// 送信
-		std::cout << "epollout" << std::endl;
 		if (client_socket->OnWritable() == FAILURE) {
 			epoll_map->Del(client_socket->GetFd());
 			return FAILURE;
@@ -84,14 +81,12 @@ int process_client_socket(Epoll* epoll_map, int event_fd, uint32_t event_mask) {
 	}
 	if (event_mask & EPOLLRDHUP) {
 		// クライアントが切断
-		std::cout << "epollrdhup" << std::endl;
 		shutdown(client_socket->GetFd(), SHUT_RD);
 		shutdown(client_socket->GetFd(), SHUT_WR);
 		epoll_map->Del(client_socket->GetFd());
 	}
 	if (event_mask & EPOLLERR || event_mask & EPOLLHUP) {
 		// エラー
-		std::cout << "epollerr || epollhup" << std::endl;
 		epoll_map->Del(client_socket->GetFd());
 	}
 	return SUCCESS;
