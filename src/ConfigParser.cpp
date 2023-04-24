@@ -196,7 +196,23 @@ void ConfigParser::ParseRoot(Location &location) {
   std::cout << "root: " << location.root_ << std::endl;
 }
 
-void ConfigParser::ParseIndex(Location &location) {}
+void ConfigParser::ParseIndex(Location &location) {
+  while (!IsEof() && *it_ != ';') {
+    SkipSpaces();
+    std::string index_str = GetWord();
+    SkipSpaces();
+    AssertIndex(location.index_, index_str);
+  }
+  Expect(';');
+
+  // for debug
+  std::cout << "index: ";
+  for (std::vector<std::string>::iterator it = location.index_.begin();
+       it != location.index_.end(); ++it) {
+    std::cout << *it << " ";
+  }
+  std::cout << std::endl;
+}
 
 void ConfigParser::ParseIsCgi(Location &location) {}
 
@@ -231,7 +247,6 @@ void ConfigParser::AssertServerName(const std::string &server_name) {
   if (server_name.size() > kMaxDomainLength) {
     throw ParserException("Invalid server name: %s", server_name.c_str());
   }
-  // 各ラベルの長さが1~63文字であり、ハイフンと英数字のみを含む(先頭、末尾はハイフン以外)ことを確認
   for (std::string::const_iterator it = server_name.begin();
        it < server_name.end();) {
     if (!IsValidLabel(server_name, it)) {
@@ -240,6 +255,7 @@ void ConfigParser::AssertServerName(const std::string &server_name) {
   }
 }
 
+// 各ラベルの長さが1~63文字であり、ハイフンと英数字のみを含む(先頭、末尾はハイフン以外)ことを確認
 bool ConfigParser::IsValidLabel(const std::string &server_name,
                                 std::string::const_iterator &it) {
   std::string::const_iterator start = it;
@@ -333,6 +349,11 @@ void ConfigParser::AssertMaxBodySize(uint64_t &dest_size,
 }
 
 void ConfigParser::AssertRoot(const std::string &root) {}
+
+void ConfigParser::AssertIndex(std::vector<std::string> &dest_index,
+                               const std::string &index_str) {
+  dest_index.push_back(index_str);
+}
 
 // utils
 char ConfigParser::GetC() {

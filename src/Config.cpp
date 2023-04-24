@@ -46,7 +46,11 @@ std::ostream &operator<<(std::ostream &os, const Config &conf) {
       }
       os << ";" << std::endl;
       os << "    root " << location_iter->root_ << ";" << std::endl;
-      os << "    index " << location_iter->index_ << ";" << std::endl;
+      for (std::vector<std::string>::const_iterator index_iter =
+               location_iter->index_.begin();
+           index_iter != location_iter->index_.end(); ++index_iter) {
+        os << "    index " << *index_iter << ";" << std::endl;
+      }
 
       for (std::map<int, std::string>::const_iterator error_page_iter =
                location_iter->error_pages_.begin();

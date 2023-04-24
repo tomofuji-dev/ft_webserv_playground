@@ -66,6 +66,8 @@ private:
                          const std::string &method_str);
   void AssertMaxBodySize(uint64_t &dest_size, const std::string &size_str);
   void AssertRoot(const std::string &root);
+  void AssertIndex(std::vector<std::string> &dest_index,
+                   const std::string &index_str);
 
   // utils
   char GetC();
