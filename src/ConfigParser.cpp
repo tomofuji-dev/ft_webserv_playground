@@ -185,7 +185,16 @@ void ConfigParser::ParseMaxBodySize(Location &location) {
   std::cout << "max_body_size: " << location.max_body_size_ << std::endl;
 }
 
-void ConfigParser::ParseRoot(Location &location) {}
+void ConfigParser::ParseRoot(Location &location) {
+  SkipSpaces();
+  location.root_ = GetWord();
+  SkipSpaces();
+  Expect(';');
+  AssertRoot(location.root_);
+
+  // for debug
+  std::cout << "root: " << location.root_ << std::endl;
+}
 
 void ConfigParser::ParseIndex(Location &location) {}
 
@@ -222,23 +231,37 @@ void ConfigParser::AssertServerName(const std::string &server_name) {
   if (server_name.size() > kMaxDomainLength) {
     throw ParserException("Invalid server name: %s", server_name.c_str());
   }
-  // 各ラベルの長さが1~63文字であることを確認
+  // 各ラベルの長さが1~63文字であり、ハイフンと英数字のみを含む(先頭、末尾はハイフン以外)ことを確認
   for (std::string::const_iterator it = server_name.begin();
        it < server_name.end();) {
-    std::string::const_iterator start = it;
-    while (it < server_name.end() && *it != '.') {
-      it++;
-    }
-    if (it - start == 0 || it - start > kMaxDomainLabelLength) {
+    if (!IsValidLabel(server_name, it)) {
       throw ParserException("Invalid server name: %s", server_name.c_str());
     }
-    if (it < server_name.end() && *it == '.') {
-      it++;
-      if (it == server_name.end()) {
-        throw ParserException("Invalid server name: %s", server_name.c_str());
-      }
+  }
+}
+
+bool ConfigParser::IsValidLabel(const std::string &server_name,
+                                std::string::const_iterator &it) {
+  std::string::const_iterator start = it;
+  while (it < server_name.end() && *it != '.') {
+    if (!(isdigit(*it) || isalpha(*it) || *it == '-')) {
+      return false;
+    }
+    if (*it == '-' && (it == start || it + 1 == server_name.end())) {
+      return false;
+    }
+    it++;
+  }
+  if (it - start == 0 || it - start > kMaxDomainLabelLength) {
+    return false;
+  }
+  if (it < server_name.end() && *it == '.') {
+    it++;
+    if (it == server_name.end()) {
+      return false;
     }
   }
+  return true;
 }
 
 void ConfigParser::AssertLocation(const Location &location) {}
@@ -308,6 +331,8 @@ void ConfigParser::AssertMaxBodySize(uint64_t &dest_size,
     throw ParserException("Invalid size: %s", size_str.c_str());
   }
 }
+
+void ConfigParser::AssertRoot(const std::string &root) {}
 
 // utils
 char ConfigParser::GetC() {

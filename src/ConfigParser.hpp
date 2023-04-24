@@ -58,11 +58,14 @@ private:
   void AssertServer(const Server &server);
   void AssertPort(int &dest_port, const std::string &port_str);
   void AssertServerName(const std::string &server_name);
+  bool IsValidLabel(const std::string &server_name,
+                    std::string::const_iterator &it);
   void AssertLocation(const Location &location);
   void AssertMatch(match_type &dest_match, const std::string &match_str);
   void AssertAllowMethod(std::set<method_type> &dest_method,
                          const std::string &method_str);
   void AssertMaxBodySize(uint64_t &dest_size, const std::string &size_str);
+  void AssertRoot(const std::string &root);
 
   // utils
   char GetC();
