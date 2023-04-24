@@ -1,3 +1,7 @@
+#ifndef UTILS_HPP
+#define UTILS_HPP
+
+#include "utils.tpp"
 #include <string>
 
-bool ws_strtoi(int *dest, const std::string src);
+#endif
