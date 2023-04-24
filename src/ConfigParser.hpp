@@ -1,28 +1,9 @@
-#ifndef CONFIGPARSER_HPP
-#define CONFIGPARSER_HPP
+#ifndef CONFIG_PARSER_HPP
+#define CONFIG_PARSER_HPP
+
+#include "Config.hpp"
 
 class ConfigParser {
-private:
-  std::vector<Server> sever_vec_; // 必須 複数可 複数の場合、一番上がデフォ
-
-public:
-  ConfigParser(const std::string &filepath);
-  ~ConfigParser();
-
-  Config Parse();
-
-  class ParserException : public std::exception {
-  private:
-    static const int MAX_ERROR_LEN = 1024;
-
-  public:
-    ParserException(const char *errfmt = "Parser error.", ...);
-    const char *what() const throw();
-
-  private:
-    char errmsg_[MAX_ERROR_LEN];
-  };
-
 private:
   const std::string file_content_;
   std::string::const_iterator it_;
@@ -34,7 +15,7 @@ private:
   // ポート番号の最大値
   static const unsigned long kMaxPortNumber = 65535;
 
-  std::string LoadFile(const std::string &filepath);
+  std::string LoadFile(const char *filepath);
 
   void ParseServer(Config &conf);
 
@@ -63,6 +44,24 @@ private:
   ConfigParser();
   ConfigParser(const ConfigParser &other);
   ConfigParser &operator=(const ConfigParser &other);
+
+public:
+  ConfigParser(const char *filepath);
+  ~ConfigParser();
+
+  void Parse(Config &config);
+
+  class ParserException : public std::exception {
+  private:
+    static const int MAX_ERROR_LEN = 1024;
+
+  public:
+    ParserException(const char *errfmt = "Parser error.", ...);
+    const char *what() const throw();
+
+  private:
+    char errmsg_[MAX_ERROR_LEN];
+  };
 };
 
 #endif

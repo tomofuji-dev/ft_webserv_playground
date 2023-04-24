@@ -42,21 +42,19 @@ struct Server { // 各バーチャルサーバーの設定を格納する
 };
 
 class Config {
-private:
-  std::vector<Server> sever_vec_; // 必須 複数可 複数の場合、一番上がデフォ
-
 public:
   Config();
   ~Config();
   std::vector<Server> GetServerVec() const;
 
 private:
+  std::vector<Server> server_vec_; // 必須 複数可 複数の場合、一番上がデフォ
   // 不使用だが、コンパイラが自動生成し、予期せず使用するのを防ぐために記述
   Config(const Config &other);
   Config &operator=(const Config &other);
 };
 
-Config ParseConfig(const std::string &filepath);
+void ParseConfig(Config &dest, const char *src_file);
 std::ostream &operator<<(std::ostream &os, const Config &conf);
 
 #endif
