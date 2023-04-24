@@ -174,7 +174,16 @@ void ConfigParser::ParseAllowMethod(Location &location) {
   std::cout << std::endl;
 }
 
-void ConfigParser::ParseMaxBodySize(Location &location) {}
+void ConfigParser::ParseMaxBodySize(Location &location) {
+  SkipSpaces();
+  std::string size_str = GetWord();
+  SkipSpaces();
+  Expect(';');
+  AssertMaxBodySize(location.max_body_size_, size_str);
+
+  // for debug
+  std::cout << "max_body_size: " << location.max_body_size_ << std::endl;
+}
 
 void ConfigParser::ParseRoot(Location &location) {}
 
@@ -262,6 +271,42 @@ void ConfigParser::AssertAllowMethod(std::set<method_type> &dest_method,
     throw ParserException("Duplicated method: %s", method_str.c_str());
   }
   dest_method.insert(src_method);
+}
+
+void ConfigParser::AssertMaxBodySize(uint64_t &dest_size,
+                                     const std::string &size_str) {
+  char unit = 'B';
+  std::size_t len = size_str.length();
+
+  if (len == 0) {
+    throw ParserException("Empty size str");
+  }
+  if (size_str[len - 1] == 'B' || size_str[len - 1] == 'K' ||
+      size_str[len - 1] == 'M' || size_str[len - 1] == 'G') {
+    unit = size_str[len - 1];
+    len--;
+  }
+  if (len == 0) {
+    throw ParserException("Invalid size: %s", size_str.c_str());
+  }
+  if (!ws_strtoi<uint64_t>(&dest_size, size_str.substr(0, len))) {
+    throw ParserException("Invalid size: %s", size_str.c_str());
+  }
+  switch (unit) {
+  case 'B':
+    break;
+  case 'K':
+    dest_size = mul_assert_overflow<uint64_t>(dest_size, 1024);
+    break;
+  case 'M':
+    dest_size = mul_assert_overflow<uint64_t>(dest_size, 1024 * 1024);
+    break;
+  case 'G':
+    dest_size = mul_assert_overflow<uint64_t>(dest_size, 1024 * 1024 * 1024);
+    break;
+  default:
+    throw ParserException("Invalid size: %s", size_str.c_str());
+  }
 }
 
 // utils

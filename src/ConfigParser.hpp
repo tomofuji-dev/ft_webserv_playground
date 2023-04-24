@@ -62,6 +62,7 @@ private:
   void AssertMatch(match_type &dest_match, const std::string &match_str);
   void AssertAllowMethod(std::set<method_type> &dest_method,
                          const std::string &method_str);
+  void AssertMaxBodySize(uint64_t &dest_size, const std::string &size_str);
 
   // utils
   char GetC();
