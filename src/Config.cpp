@@ -39,7 +39,7 @@ std::ostream &operator<<(std::ostream &os, const Config &conf) {
          location_iter != server_iter->locations_.end(); ++location_iter) {
       os << "  location " << location_iter->path_ << " {" << std::endl;
       os << "    allow_method";
-      for (std::vector<std::string>::const_iterator method_iter =
+      for (std::set<method_type>::const_iterator method_iter =
                location_iter->allow_method_.begin();
            method_iter != location_iter->allow_method_.end(); ++method_iter) {
         os << " " << *method_iter;

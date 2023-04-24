@@ -135,7 +135,7 @@ void ConfigParser::ParseLocation(Server &server) {
 }
 
 void ConfigParser::SetLocationDefault(Location &location) {
-  location.match_ = prefix;
+  location.match_ = PREFIX;
   location.max_body_size_ = 1024 * 1024; // 1MB
   location.is_cgi_ = false;
   location.autoindex_ = false;
@@ -152,7 +152,27 @@ void ConfigParser::ParseMatch(Location &location) {
   std::cout << "match: " << location.match_ << std::endl;
 }
 
-void ConfigParser::ParseAllowMethod(Location &location) {}
+void ConfigParser::ParseAllowMethod(Location &location) {
+  if (!location.allow_method_.empty()) {
+    throw ParserException("allow_method is already set");
+  };
+  while (!IsEof() && *it_ != ';') {
+    SkipSpaces();
+    std::string method_str = GetWord();
+    SkipSpaces();
+    AssertAllowMethod(location.allow_method_, method_str);
+  }
+  Expect(';');
+
+  // for debug
+  std::cout << "allow_method: ";
+  const char *method_str[] = {"GET", "POST", "DELETE"};
+  for (std::set<method_type>::iterator it = location.allow_method_.begin();
+       it != location.allow_method_.end(); ++it) {
+    std::cout << method_str[*it] << " ";
+  }
+  std::cout << std::endl;
+}
 
 void ConfigParser::ParseMaxBodySize(Location &location) {}
 
@@ -177,9 +197,9 @@ void ConfigParser::AssertServer(const Server &server) {
   }
 }
 
-void ConfigParser::AssertPort(int &dest_port, const std::string &src_str) {
-  if (!ws_strtoi<int>(&dest_port, src_str)) {
-    throw ParserException("Invalid port number: %s", src_str.c_str());
+void ConfigParser::AssertPort(int &dest_port, const std::string &port_str) {
+  if (!ws_strtoi<int>(&dest_port, port_str)) {
+    throw ParserException("Invalid port number: %s", port_str.c_str());
   }
   if (dest_port < 0 || dest_port > kMaxPortNumber) {
     throw ParserException("Invalid port number: %d", dest_port);
@@ -214,6 +234,36 @@ void ConfigParser::AssertServerName(const std::string &server_name) {
 
 void ConfigParser::AssertLocation(const Location &location) {}
 
+void ConfigParser::AssertMatch(match_type &dest_match,
+                               const std::string &match_str) {
+  if (match_str == "prefix") {
+    dest_match = PREFIX;
+  } else if (match_str == "back") {
+    dest_match = BACK;
+  } else {
+    throw ParserException("Invalid match type: %s", match_str.c_str());
+  }
+}
+
+void ConfigParser::AssertAllowMethod(std::set<method_type> &dest_method,
+                                     const std::string &method_str) {
+  method_type src_method;
+
+  if (method_str == "GET") {
+    src_method = GET;
+  } else if (method_str == "POST") {
+    src_method = POST;
+  } else if (method_str == "DELETE") {
+    src_method = DELETE;
+  } else {
+    throw ParserException("Invalid method: %s", method_str.c_str());
+  }
+  if (dest_method.find(src_method) != dest_method.end()) {
+    throw ParserException("Duplicated method: %s", method_str.c_str());
+  }
+  dest_method.insert(src_method);
+}
+
 // utils
 char ConfigParser::GetC() {
   if (IsEof()) {
@@ -230,17 +280,6 @@ void ConfigParser::Expect(char c) {
     throw ParserException("Expected %c, but unexpected char: %c", c, *it_);
   }
   it_++;
-}
-
-void ConfigParser::AssertMatch(match_type &dest_match,
-                               const std::string &match_str) {
-  if (match_str == "prefix") {
-    dest_match = PREFIX;
-  } else if (match_str == "back") {
-    dest_match = BACK;
-  } else {
-    throw ParserException("Invalid match type: %s", match_str.c_str());
-  }
 }
 
 void ConfigParser::SkipSpaces() {
