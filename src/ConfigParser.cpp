@@ -35,6 +35,7 @@ void ConfigParser::Parse(Config &config) {
 
 void ConfigParser::ParseServer(Config &config) {
   Server server;
+  server.listen_ = -1;
 
   SkipSpaces();
   Expect('{');
@@ -95,7 +96,11 @@ void ConfigParser::ParseAutoIndex(Location &location) {}
 void ConfigParser::ParseReturn(Location &location) {}
 
 // validator
-void ConfigParser::AssertServer(const Server &server) {}
+void ConfigParser::AssertServer(const Server &server) {
+  if (server.listen_ == -1) {
+    throw ParserException("Listen port is not set");
+  }
+}
 
 void ConfigParser::AssertPort(int &dest_port, const std::string &src_str) {
   if (!ws_strtoi(&dest_port, src_str)) {
