@@ -62,10 +62,7 @@ void ConfigParser::ParseListen(Server &server) {
   std::string port_str = GetWord();
   SkipSpaces();
   Expect(';');
-  if (!ws_strtoi(&server.listen_, port_str)) {
-    throw ParserException("Invalid port number: %s", port_str.c_str());
-  }
-  AssertPort(server.listen_);
+  AssertPort(server.listen_, port_str);
   std::cout << "listen: " << server.listen_ << std::endl;
 }
 
@@ -100,9 +97,12 @@ void ConfigParser::ParseReturn(Location &location) {}
 // validator
 void ConfigParser::AssertServer(const Server &server) {}
 
-void ConfigParser::AssertPort(const int port) {
-  if (port < 0 || port > kMaxPortNumber) {
-    throw ParserException("Invalid port number: %d", port);
+void ConfigParser::AssertPort(int &dest_port, const std::string &src_str) {
+  if (!ws_strtoi(&dest_port, src_str)) {
+    throw ParserException("Invalid port number: %s", src_str.c_str());
+  }
+  if (dest_port < 0 || dest_port > kMaxPortNumber) {
+    throw ParserException("Invalid port number: %d", dest_port);
   }
 }
 

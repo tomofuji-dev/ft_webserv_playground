@@ -55,7 +55,7 @@ private:
 
   // validator
   void AssertServer(const Server &server);
-  void AssertPort(const int port);
+  void AssertPort(int &dest_port, const std::string &src_str);
 
   // utils
   char GetC();
