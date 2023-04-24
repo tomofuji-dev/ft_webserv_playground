@@ -1,5 +1,5 @@
-#ifndef CONF_HPP
-#define CONF_HPP
+#ifndef CONFIGPARSER_HPP
+#define CONFIGPARSER_HPP
 
 class ConfigParser {
 private:
@@ -60,7 +60,7 @@ private:
   std::string GetWord();
 
   // 不使用だが、コンパイラが自動生成し、予期せず使用するのを防ぐために記述
-  CofigParser();
+  ConfigParser();
   ConfigParser(const ConfigParser &other);
   ConfigParser &operator=(const ConfigParser &other);
 };
