@@ -6,6 +6,8 @@ Config::Config() {}
 
 Config::~Config() {}
 
+void Config::AddServer(const Server &server) { server_vec_.push_back(server); }
+
 std::vector<Server> Config::GetServerVec() const { return server_vec_; }
 
 void ParseConfig(Config &dest, const char *src_file) {
@@ -23,8 +25,7 @@ std::ostream &operator<<(std::ostream &os, const Config &conf) {
   for (std::vector<Server>::const_iterator server_iter = server_vec.begin();
        server_iter != server_vec.end(); ++server_iter) {
     os << "server {" << std::endl;
-    os << "  listen " << ntohs(server_iter->listen_.sin_port) << ";"
-       << std::endl;
+    os << "  listen " << server_iter->listen_ << ";" << std::endl;
     os << "  server_name";
     for (std::vector<std::string>::const_iterator name_iter =
              server_iter->sv_name_.begin();

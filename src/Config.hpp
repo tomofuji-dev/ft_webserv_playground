@@ -32,7 +32,7 @@ struct Location {
 };
 
 struct Server { // 各バーチャルサーバーの設定を格納する
-  struct sockaddr_in listen_; // 必須 単一
+  int listen_;  // 必須 単一
 
   std::vector<std::string> sv_name_;
   // 任意 単一 ディレクティブは一つで、複数指定された場合は最後の一つだけ保持
@@ -45,6 +45,8 @@ class Config {
 public:
   Config();
   ~Config();
+
+  void AddServer(const Server &server);
   std::vector<Server> GetServerVec() const;
 
 private:
