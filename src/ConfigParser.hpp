@@ -41,6 +41,7 @@ private:
   void ParseListen(Server &server);
   void ParseServerName(Server &server);
   void ParseLocation(Server &server);
+  void SetLocationDefault(Location &location);
 
   void ParseMatch(Location &location);
   void ParseAllowMethod(Location &location);
@@ -57,6 +58,7 @@ private:
   void AssertServer(const Server &server);
   void AssertPort(int &dest_port, const std::string &src_str);
   void AssertServerName(const std::string &server_name);
+  void AssertLocation(const Location &location);
 
   // utils
   char GetC();

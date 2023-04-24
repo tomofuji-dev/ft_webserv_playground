@@ -91,10 +91,60 @@ void ConfigParser::ParseServerName(Server &server) {
 }
 
 void ConfigParser::ParseLocation(Server &server) {
+  // for debug
   std::cout << "location" << std::endl;
+
+  Location location;
+  SetLocationDefault(location);
+
+  SkipSpaces();
+  location.path_ = GetWord();
+  SkipSpaces();
+  Expect('{');
+  while (!IsEof() && *it_ != '}') {
+    SkipSpaces();
+    std::string token = GetWord();
+    if (token == "match") {
+      ParseMatch(location);
+    } else if (token == "allow_method") {
+      ParseAllowMethod(location);
+    } else if (token == "max_body_size") {
+      ParseMaxBodySize(location);
+    } else if (token == "root") {
+      ParseRoot(location);
+    } else if (token == "index") {
+      ParseIndex(location);
+    } else if (token == "is_cgi") {
+      ParseIsCgi(location);
+    } else if (token == "cgi_path") {
+      ParseCgiPath(location);
+    } else if (token == "error_pages") {
+      ParseErrorPages(location);
+    } else if (token == "autoindex") {
+      ParseAutoIndex(location);
+    } else if (token == "return") {
+      ParseReturn(location);
+    } else {
+      throw ParserException("Unexpected token: %s", token.c_str());
+    }
+    SkipSpaces();
+  }
+  Expect('}');
+  AssertLocation(location);
+  server.locations_.push_back(location);
 }
 
-void ConfigParser::ParseMatch(Location &location) {}
+void ConfigParser::SetLocationDefault(Location &location) {
+  location.match_ = prefix;
+  location.max_body_size_ = 1024 * 1024; // 1MB
+  location.is_cgi_ = false;
+  location.autoindex_ = false;
+}
+
+void ConfigParser::ParseMatch(Location &location) {
+  // for debug
+  std::cout << "match" << std::endl;
+}
 
 void ConfigParser::ParseAllowMethod(Location &location) {}
 
@@ -122,7 +172,7 @@ void ConfigParser::AssertServer(const Server &server) {
 }
 
 void ConfigParser::AssertPort(int &dest_port, const std::string &src_str) {
-  if (!ws_strtoi(&dest_port, src_str)) {
+  if (!ws_strtoi<int>(&dest_port, src_str)) {
     throw ParserException("Invalid port number: %s", src_str.c_str());
   }
   if (dest_port < 0 || dest_port > kMaxPortNumber) {
@@ -155,6 +205,8 @@ void ConfigParser::AssertServerName(const std::string &server_name) {
     }
   }
 }
+
+void ConfigParser::AssertLocation(const Location &location) {}
 
 // utils
 char ConfigParser::GetC() {

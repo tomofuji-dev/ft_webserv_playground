@@ -16,9 +16,9 @@ struct Location {
   std::string path_;
   match_type match_; // 後方一致は、CGIの場合のみ使用可能
   std::vector<std::string> allow_method_; // GET POST DELETE から１個以上指定
-  size_t max_body_size_; // 任意 単一 デフォルト１MB, 0は無制限 制限超え 413
-                         // Request Entity Too Large
-                         // 制限されるのはボディ部分でヘッダーは含まない
+  uint64_t max_body_size_; // 任意 単一 デフォルト１MB, 0は無制限 制限超え 413
+                           // Request Entity Too Large
+                           // 制限されるのはボディ部分でヘッダーは含まない
   std::string root_; // 必須 単一 相対パスの起点
   std::string index_; // 任意 単一 ディレクトリへのアクセス時に返すファイル
   bool is_cgi_; // デフォルトはfalse 一致する場合は、CGIとして処理する
