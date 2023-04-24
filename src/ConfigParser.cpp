@@ -142,8 +142,14 @@ void ConfigParser::SetLocationDefault(Location &location) {
 }
 
 void ConfigParser::ParseMatch(Location &location) {
+  SkipSpaces();
+  std::string match_str = GetWord();
+  SkipSpaces();
+  Expect(';');
+  AssertMatch(location.match_, match_str);
+
   // for debug
-  std::cout << "match" << std::endl;
+  std::cout << "match: " << location.match_ << std::endl;
 }
 
 void ConfigParser::ParseAllowMethod(Location &location) {}
@@ -224,6 +230,17 @@ void ConfigParser::Expect(char c) {
     throw ParserException("Expected %c, but unexpected char: %c", c, *it_);
   }
   it_++;
+}
+
+void ConfigParser::AssertMatch(match_type &dest_match,
+                               const std::string &match_str) {
+  if (match_str == "prefix") {
+    dest_match = PREFIX;
+  } else if (match_str == "back") {
+    dest_match = BACK;
+  } else {
+    throw ParserException("Invalid match type: %s", match_str.c_str());
+  }
 }
 
 void ConfigParser::SkipSpaces() {

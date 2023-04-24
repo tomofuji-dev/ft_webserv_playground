@@ -59,6 +59,7 @@ private:
   void AssertPort(int &dest_port, const std::string &src_str);
   void AssertServerName(const std::string &server_name);
   void AssertLocation(const Location &location);
+  void AssertMatch(match_type &dest_match, const std::string &match_str);
 
   // utils
   char GetC();

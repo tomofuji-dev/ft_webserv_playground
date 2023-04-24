@@ -8,14 +8,20 @@
 
 // 複数指定不可の単一のみの設定項目で、複数指定された場合は最後の一つだけ保持する
 enum match_type {
-  prefix, // 前方一致
-  back,   // 後方一致
+  PREFIX, // 前方一致
+  BACK,   // 後方一致
+};
+
+enum method_type {
+  GET,
+  POST,
+  DELETE,
 };
 
 struct Location {
   std::string path_;
   match_type match_; // 後方一致は、CGIの場合のみ使用可能
-  std::vector<std::string> allow_method_; // GET POST DELETE から１個以上指定
+  std::vector<method_type> allow_method_; // GET POST DELETE から１個以上指定
   uint64_t max_body_size_; // 任意 単一 デフォルト１MB, 0は無制限 制限超え 413
                            // Request Entity Too Large
                            // 制限されるのはボディ部分でヘッダーは含まない
