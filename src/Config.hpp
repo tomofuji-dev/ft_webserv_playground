@@ -34,7 +34,7 @@ struct Location {
 struct Server { // 各バーチャルサーバーの設定を格納する
   int listen_;  // 必須 単一
 
-  std::vector<std::string> sv_name_;
+  std::vector<std::string> server_names_;
   // 任意 単一 ディレクティブは一つで、複数指定された場合は最後の一つだけ保持
   // 一つのディレクティブ内に、サーバーネームは並べて複数可能
 

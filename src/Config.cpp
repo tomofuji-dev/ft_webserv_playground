@@ -28,8 +28,8 @@ std::ostream &operator<<(std::ostream &os, const Config &conf) {
     os << "  listen " << server_iter->listen_ << ";" << std::endl;
     os << "  server_name";
     for (std::vector<std::string>::const_iterator name_iter =
-             server_iter->sv_name_.begin();
-         name_iter != server_iter->sv_name_.end(); ++name_iter) {
+             server_iter->server_names_.begin();
+         name_iter != server_iter->server_names_.end(); ++name_iter) {
       os << " " << *name_iter;
     }
     os << ";" << std::endl;

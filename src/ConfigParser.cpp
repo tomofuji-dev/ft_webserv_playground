@@ -64,11 +64,30 @@ void ConfigParser::ParseListen(Server &server) {
   SkipSpaces();
   Expect(';');
   AssertPort(server.listen_, port_str);
+
+  // for debug
   std::cout << "listen: " << server.listen_ << std::endl;
 }
 
 void ConfigParser::ParseServerName(Server &server) {
-  std::cout << "server_name" << std::endl;
+  std::vector<std::string> new_server_names;
+  while (!IsEof() && *it_ != ';') {
+    SkipSpaces();
+    std::string server_name = GetWord();
+    SkipSpaces();
+    AssertServerName(server_name);
+    new_server_names.push_back(server_name);
+  }
+  Expect(';');
+  server.server_names_ = new_server_names;
+
+  // for debug
+  std::cout << "server_name: ";
+  for (std::vector<std::string>::iterator it = server.server_names_.begin();
+       it != server.server_names_.end(); ++it) {
+    std::cout << *it << " ";
+  }
+  std::cout << std::endl;
 }
 
 void ConfigParser::ParseLocation(Server &server) {
@@ -108,6 +127,32 @@ void ConfigParser::AssertPort(int &dest_port, const std::string &src_str) {
   }
   if (dest_port < 0 || dest_port > kMaxPortNumber) {
     throw ParserException("Invalid port number: %d", dest_port);
+  }
+}
+
+void ConfigParser::AssertServerName(const std::string &server_name) {
+  if (server_name.empty()) {
+    throw ParserException("Empty server name");
+  }
+  if (server_name.size() > kMaxDomainLength) {
+    throw ParserException("Invalid server name: %s", server_name.c_str());
+  }
+  // 各ラベルの長さが1~63文字であることを確認
+  for (std::string::const_iterator it = server_name.begin();
+       it < server_name.end();) {
+    std::string::const_iterator start = it;
+    while (it < server_name.end() && *it != '.') {
+      it++;
+    }
+    if (it - start == 0 || it - start > kMaxDomainLabelLength) {
+      throw ParserException("Invalid server name: %s", server_name.c_str());
+    }
+    if (it < server_name.end() && *it == '.') {
+      it++;
+      if (it == server_name.end()) {
+        throw ParserException("Invalid server name: %s", server_name.c_str());
+      }
+    }
   }
 }
 
