@@ -33,9 +33,9 @@ struct Location {
   std::map<int, std::string> error_pages_;
   // 任意 複数可 mapのkeyはエラーコード, valueはエラーページのパス
   // エラーコードに重複があった場合は、最後の一つだけ保持する（上書きされる）
-  bool autoindex_;     // 任意 単一 デフォルトはfalse
-  std::string retrun_; // 任意 単一
-                       // HTTPステータスコード301と共に<path>へリダイレクトする｡
+  bool autoindex_; // 任意 単一 デフォルトはfalse
+  std::pair<int, std::string> return_;
+  // 任意 単一 ステータスコードと、その時に返すファイルのパス(emptyを許容する)
 };
 
 struct Server { // 各バーチャルサーバーの設定を格納する

@@ -38,19 +38,27 @@ std::ostream &operator<<(std::ostream &os, const Config &conf) {
              server_iter->locations_.begin();
          location_iter != server_iter->locations_.end(); ++location_iter) {
       os << "  location " << location_iter->path_ << " {" << std::endl;
+      const char *match_str[2] = {"PREFIX", "BACK"};
+      os << "    match " << match_str[location_iter->match_] << ";"
+         << std::endl;
       os << "    allow_method";
+      const char *method_str[3] = {"GET", "POST", "DELETE"};
       for (std::set<method_type>::const_iterator method_iter =
                location_iter->allow_method_.begin();
            method_iter != location_iter->allow_method_.end(); ++method_iter) {
-        os << " " << *method_iter;
+        os << " " << method_str[*method_iter];
       }
       os << ";" << std::endl;
+      os << "    max_body_size " << location_iter->max_body_size_ << ";"
+         << std::endl;
       os << "    root " << location_iter->root_ << ";" << std::endl;
       for (std::vector<std::string>::const_iterator index_iter =
                location_iter->index_.begin();
            index_iter != location_iter->index_.end(); ++index_iter) {
         os << "    index " << *index_iter << ";" << std::endl;
       }
+      os << "    is_cgi " << location_iter->is_cgi_ << ";" << std::endl;
+      os << "    cgi_path " << location_iter->cgi_path_ << ";" << std::endl;
 
       for (std::map<int, std::string>::const_iterator error_page_iter =
                location_iter->error_pages_.begin();
@@ -59,6 +67,9 @@ std::ostream &operator<<(std::ostream &os, const Config &conf) {
         os << "    error_page " << error_page_iter->first << " "
            << error_page_iter->second << ";" << std::endl;
       }
+      os << "    autoindex " << location_iter->autoindex_ << ";" << std::endl;
+      os << "    return " << location_iter->return_.first << " "
+         << location_iter->return_.second << ";" << std::endl;
 
       os << "  }" << std::endl;
     }

@@ -68,10 +68,18 @@ private:
   void AssertRoot(const std::string &root);
   void AssertIndex(std::vector<std::string> &dest_index,
                    const std::string &index_str);
+  void AssertCgiPath(const std::string &cgi_path);
+  void AssertErrorPages(std::map<int, std::string> &dest_error_pages,
+                        const std::vector<int> error_codes,
+                        const std::string &error_page_str);
+  void AssertBool(bool &dest_bool, const std::string &bool_str);
+  void AssertReturn(std::pair<int, std::string> &dest_return,
+                    const std::string &return_code_str,
+                    const std::string &return_path_str);
 
   // utils
   char GetC();
-  void Expect(char c);
+  void Expect(const char c);
   void SkipSpaces();
   std::string GetWord();
 

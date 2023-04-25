@@ -91,14 +91,15 @@ void ConfigParser::ParseServerName(Server &server) {
 }
 
 void ConfigParser::ParseLocation(Server &server) {
-  // for debug
-  std::cout << "location" << std::endl;
 
   Location location;
   SetLocationDefault(location);
 
   SkipSpaces();
   location.path_ = GetWord();
+  // for debug
+  std::cout << "location"
+            << " " << location.path_ << std::endl;
   SkipSpaces();
   Expect('{');
   while (!IsEof() && *it_ != '}') {
@@ -118,7 +119,7 @@ void ConfigParser::ParseLocation(Server &server) {
       ParseIsCgi(location);
     } else if (token == "cgi_path") {
       ParseCgiPath(location);
-    } else if (token == "error_pages") {
+    } else if (token == "error_page") {
       ParseErrorPages(location);
     } else if (token == "autoindex") {
       ParseAutoIndex(location);
@@ -139,6 +140,7 @@ void ConfigParser::SetLocationDefault(Location &location) {
   location.max_body_size_ = 1024 * 1024; // 1MB
   location.is_cgi_ = false;
   location.autoindex_ = false;
+  location.return_.first = -1;
 }
 
 void ConfigParser::ParseMatch(Location &location) {
@@ -214,15 +216,87 @@ void ConfigParser::ParseIndex(Location &location) {
   std::cout << std::endl;
 }
 
-void ConfigParser::ParseIsCgi(Location &location) {}
+void ConfigParser::ParseIsCgi(Location &location) {
+  SkipSpaces();
+  std::string is_cgi_str = GetWord();
+  SkipSpaces();
+  Expect(';');
+  AssertBool(location.is_cgi_, is_cgi_str);
 
-void ConfigParser::ParseCgiPath(Location &location) {}
+  // for debug
+  std::cout << "is_cgi: " << location.is_cgi_ << std::endl;
+}
 
-void ConfigParser::ParseErrorPages(Location &location) {}
+void ConfigParser::ParseCgiPath(Location &location) {
+  SkipSpaces();
+  location.cgi_path_ = GetWord();
+  SkipSpaces();
+  Expect(';');
+  AssertCgiPath(location.cgi_path_);
 
-void ConfigParser::ParseAutoIndex(Location &location) {}
+  // for debug
+  std::cout << "cgi_path: " << location.cgi_path_ << std::endl;
+}
 
-void ConfigParser::ParseReturn(Location &location) {}
+void ConfigParser::ParseErrorPages(Location &location) {
+  while (!IsEof() && *it_ != ';') {
+    std::vector<int> error_codes;
+    std::string error_page_str;
+    while (true) {
+      int error_code;
+      SkipSpaces();
+      error_page_str = GetWord();
+      SkipSpaces();
+      if (!ws_strtoi(&error_code, error_page_str)) {
+        break;
+      }
+      error_codes.push_back(error_code);
+    }
+    AssertErrorPages(location.error_pages_, error_codes, error_page_str);
+  }
+  Expect(';');
+
+  // for debug
+  std::cout << "error_pages: ";
+  for (std::map<int, std::string>::iterator it = location.error_pages_.begin();
+       it != location.error_pages_.end(); ++it) {
+    std::cout << it->first << " " << it->second << " ";
+  }
+  std::cout << std::endl;
+}
+
+void ConfigParser::ParseAutoIndex(Location &location) {
+  SkipSpaces();
+  std::string autoindex_str = GetWord();
+  SkipSpaces();
+  Expect(';');
+  AssertBool(location.autoindex_, autoindex_str);
+
+  // for debug
+  std::cout << "autoindex: " << location.autoindex_ << std::endl;
+}
+
+void ConfigParser::ParseReturn(Location &location) {
+  std::string return_code_str;
+  std::string return_path_str;
+
+  SkipSpaces();
+  return_code_str = GetWord();
+  SkipSpaces();
+  if (IsEof()) {
+    throw ParserException("unexpected EOF");
+  }
+  if (*it_ != ';') {
+    return_path_str = GetWord();
+    SkipSpaces();
+  }
+  Expect(';');
+  AssertReturn(location.return_, return_code_str, return_path_str);
+
+  // for debug
+  std::cout << "return: " << location.return_.first << " "
+            << location.return_.second << std::endl;
+}
 
 // validator
 void ConfigParser::AssertServer(const Server &server) {
@@ -348,11 +422,76 @@ void ConfigParser::AssertMaxBodySize(uint64_t &dest_size,
   }
 }
 
-void ConfigParser::AssertRoot(const std::string &root) {}
+void ConfigParser::AssertRoot(const std::string &root) {
+  // AssertPath(root);
+}
 
 void ConfigParser::AssertIndex(std::vector<std::string> &dest_index,
                                const std::string &index_str) {
   dest_index.push_back(index_str);
+}
+
+void ConfigParser::AssertBool(bool &dest_bool, const std::string &bool_str) {
+  if (bool_str == "on") {
+    dest_bool = true;
+  } else if (bool_str == "off") {
+    dest_bool = false;
+  } else {
+    throw ParserException("Invalid cgi: %s", bool_str.c_str());
+  }
+}
+
+void ConfigParser::AssertCgiPath(const std::string &cgi_path) {
+  // AssertPath(cgi_path);
+}
+
+void ConfigParser::AssertErrorPages(
+    std::map<int, std::string> &dest_error_pages,
+    const std::vector<int> error_codes, const std::string &error_page_str) {
+  static const int valid_codes = 39;
+  static const int init_list[valid_codes] = {
+      400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411, 412,
+      413, 414, 415, 416, 417, 418, 421, 422, 423, 424, 426, 428, 429,
+      431, 451, 500, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511};
+  static const std::set<int> valid_error_status_codes(init_list,
+                                                      init_list + valid_codes);
+
+  if (error_codes.empty()) {
+    throw ParserException("Empty error code");
+  }
+  for (std::vector<int>::const_iterator it = error_codes.begin();
+       it != error_codes.end(); it++) {
+    if (valid_error_status_codes.count(*it) == 0) {
+      throw ParserException("Invalid error code: %d", *it);
+    }
+    dest_error_pages[*it] = error_page_str;
+  }
+}
+
+void ConfigParser::AssertReturn(std::pair<int, std::string> &dest_return,
+                                const std::string &return_code_str,
+                                const std::string &return_path_str) {
+  int return_code;
+  static const int valid_codes = 57;
+  static const int init_list[valid_codes] = {
+      200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302, 303, 304,
+      305, 307, 308, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410, 411,
+      412, 413, 414, 415, 416, 417, 418, 421, 422, 423, 424, 426, 428, 429, 431,
+      451, 500, 501, 502, 503, 504, 505, 506, 507, 508, 510, 511};
+  static const std::set<int> valid_status_codes(init_list,
+                                                init_list + valid_codes);
+
+  if (!ws_strtoi<int>(&return_code, return_code_str)) {
+    throw ParserException("Invalid return code: %s", return_code_str.c_str());
+  }
+  if (valid_status_codes.count(return_code) == 0) {
+    throw ParserException("Invalid return code: %d", return_code);
+  }
+  // return ディレクティブは上書きではなく、最初の設定を優先
+  if (dest_return.first == -1) {
+    dest_return.first = return_code;
+    dest_return.second = return_path_str;
+  }
 }
 
 // utils
@@ -363,7 +502,7 @@ char ConfigParser::GetC() {
   return *it_++;
 }
 
-void ConfigParser::Expect(char c) {
+void ConfigParser::Expect(const char c) {
   if (IsEof()) {
     throw ParserException("Unexpected EOF");
   }
