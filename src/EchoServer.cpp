@@ -4,8 +4,7 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-int process_server_socket(Epoll *epoll_map, ListenSocket *server_socket,
-                          uint32_t epoll_mask);
+int process_server_socket(Epoll *epoll_map, int event_fd);
 int process_client_socket(Epoll *epoll_map, int event_fd, uint32_t event_mask);
 
 int main() {
@@ -32,7 +31,7 @@ int main() {
       int event_fd = events[i].data.fd;
       uint32_t event_mask = events[i].events;
       if (event_fd == server_socket->GetFd()) {
-        process_server_socket(epoll_map, server_socket, epoll_mask);
+        process_server_socket(epoll_map, event_fd);
       } else {
         process_client_socket(epoll_map, event_fd, event_mask);
       }
@@ -42,9 +41,13 @@ int main() {
   return SUCCESS;
 }
 
-int process_server_socket(Epoll *epoll_map, ListenSocket *server_socket,
-                          uint32_t epoll_mask) {
+int process_server_socket(Epoll *epoll_map, int event_fd) {
   // 接続要求を処理
+  static uint32_t epoll_mask =
+      EPOLLIN | EPOLLPRI | EPOLLRDHUP | EPOLLOUT | EPOLLET;
+  ListenSocket *server_socket =
+      reinterpret_cast<ListenSocket *>(epoll_map->GetSocket(event_fd));
+
   ConnSocket *client_socket = server_socket->Accept();
   if (client_socket == NULL ||
       epoll_map->Add(client_socket, epoll_mask) == FAILURE) {
@@ -57,7 +60,7 @@ int process_server_socket(Epoll *epoll_map, ListenSocket *server_socket,
 int process_client_socket(Epoll *epoll_map, int event_fd, uint32_t event_mask) {
   // clientからの通信を処理
   ConnSocket *client_socket =
-      static_cast<ConnSocket *>(epoll_map->GetSocket(event_fd));
+      reinterpret_cast<ConnSocket *>(epoll_map->GetSocket(event_fd));
   if (client_socket == NULL) {
     return FAILURE;
   }
