@@ -64,10 +64,6 @@ void ConfigParser::ParseListen(Server &server) {
   SkipSpaces();
   Expect(';');
   AssertListen(server.listen_, listen_str);
-
-  // for debug
-  std::cout << "listen: " << server.listen_.listen_ip_ << ":"
-            << server.listen_.listen_port_ << std::endl;
 }
 
 void ConfigParser::ParseServerName(Server &server) {
@@ -81,14 +77,6 @@ void ConfigParser::ParseServerName(Server &server) {
   }
   Expect(';');
   server.server_names_ = new_server_names;
-
-  // for debug
-  std::cout << "server_name: ";
-  for (std::vector<std::string>::iterator it = server.server_names_.begin();
-       it != server.server_names_.end(); ++it) {
-    std::cout << *it << " ";
-  }
-  std::cout << std::endl;
 }
 
 void ConfigParser::ParseLocation(Server &server) {
@@ -98,9 +86,6 @@ void ConfigParser::ParseLocation(Server &server) {
 
   SkipSpaces();
   location.path_ = GetWord();
-  // for debug
-  std::cout << "location"
-            << " " << location.path_ << std::endl;
   SkipSpaces();
   Expect('{');
   while (!IsEof() && *it_ != '}') {
@@ -150,9 +135,6 @@ void ConfigParser::ParseMatch(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertMatch(location.match_, match_str);
-
-  // for debug
-  std::cout << "match: " << location.match_ << std::endl;
 }
 
 void ConfigParser::ParseAllowMethod(Location &location) {
@@ -166,15 +148,6 @@ void ConfigParser::ParseAllowMethod(Location &location) {
     AssertAllowMethod(location.allow_method_, method_str);
   }
   Expect(';');
-
-  // for debug
-  std::cout << "allow_method: ";
-  const char *method_str[] = {"GET", "POST", "DELETE"};
-  for (std::set<method_type>::iterator it = location.allow_method_.begin();
-       it != location.allow_method_.end(); ++it) {
-    std::cout << method_str[*it] << " ";
-  }
-  std::cout << std::endl;
 }
 
 void ConfigParser::ParseMaxBodySize(Location &location) {
@@ -183,9 +156,6 @@ void ConfigParser::ParseMaxBodySize(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertMaxBodySize(location.max_body_size_, size_str);
-
-  // for debug
-  std::cout << "max_body_size: " << location.max_body_size_ << std::endl;
 }
 
 void ConfigParser::ParseRoot(Location &location) {
@@ -194,9 +164,6 @@ void ConfigParser::ParseRoot(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertRoot(location.root_);
-
-  // for debug
-  std::cout << "root: " << location.root_ << std::endl;
 }
 
 void ConfigParser::ParseIndex(Location &location) {
@@ -207,14 +174,6 @@ void ConfigParser::ParseIndex(Location &location) {
     AssertIndex(location.index_, index_str);
   }
   Expect(';');
-
-  // for debug
-  std::cout << "index: ";
-  for (std::vector<std::string>::iterator it = location.index_.begin();
-       it != location.index_.end(); ++it) {
-    std::cout << *it << " ";
-  }
-  std::cout << std::endl;
 }
 
 void ConfigParser::ParseIsCgi(Location &location) {
@@ -223,9 +182,6 @@ void ConfigParser::ParseIsCgi(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertBool(location.is_cgi_, is_cgi_str);
-
-  // for debug
-  std::cout << "is_cgi: " << location.is_cgi_ << std::endl;
 }
 
 void ConfigParser::ParseCgiPath(Location &location) {
@@ -234,9 +190,6 @@ void ConfigParser::ParseCgiPath(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertCgiPath(location.cgi_path_);
-
-  // for debug
-  std::cout << "cgi_path: " << location.cgi_path_ << std::endl;
 }
 
 void ConfigParser::ParseErrorPages(Location &location) {
@@ -256,14 +209,6 @@ void ConfigParser::ParseErrorPages(Location &location) {
     AssertErrorPages(location.error_pages_, error_codes, error_page_str);
   }
   Expect(';');
-
-  // for debug
-  std::cout << "error_pages: ";
-  for (std::map<int, std::string>::iterator it = location.error_pages_.begin();
-       it != location.error_pages_.end(); ++it) {
-    std::cout << it->first << " " << it->second << " ";
-  }
-  std::cout << std::endl;
 }
 
 void ConfigParser::ParseAutoIndex(Location &location) {
@@ -272,9 +217,6 @@ void ConfigParser::ParseAutoIndex(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertBool(location.autoindex_, autoindex_str);
-
-  // for debug
-  std::cout << "autoindex: " << location.autoindex_ << std::endl;
 }
 
 void ConfigParser::ParseReturn(Location &location) {
@@ -293,10 +235,6 @@ void ConfigParser::ParseReturn(Location &location) {
   }
   Expect(';');
   AssertReturn(location.return_, return_code_str, return_path_str);
-
-  // for debug
-  std::cout << "return: " << location.return_.first << " "
-            << location.return_.second << std::endl;
 }
 
 // validator
