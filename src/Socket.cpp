@@ -118,7 +118,7 @@ int ConnSocket::OnWritable() {
   return SUCCESS;
 }
 
-int ConnSocket::process_socket(Epoll *epoll_map, int event_fd, void *data) {
+int ConnSocket::ProcessSocket(Epoll *epoll_map, int event_fd, void *data) {
   // clientからの通信を処理
   uint32_t event_mask = *(static_cast<uint32_t *>(data));
   ConnSocket *client_socket =
@@ -217,7 +217,7 @@ ConnSocket *ListenSocket::Accept() {
   return conn_socket;
 }
 
-int ListenSocket::process_socket(Epoll *epoll_map, int event_fd, void *data) {
+int ListenSocket::ProcessSocket(Epoll *epoll_map, int event_fd, void *data) {
   // 接続要求を処理
   (void)data;
   static uint32_t epoll_mask =
