@@ -38,9 +38,14 @@ struct Location {
   // 任意 単一 ステータスコードと、その時に返すファイルのパス(emptyを許容する)
 };
 
-struct Server { // 各バーチャルサーバーの設定を格納する
-  int listen_;  // 必須 単一
+struct Listen { // 単一
+  std::string listen_ip_port_;
+  std::string listen_ip_;
+  int listen_port_;
+};
 
+struct Server {   // 各バーチャルサーバーの設定を格納する
+  Listen listen_; // 必須 単一
   std::vector<std::string> server_names_;
   // 任意 単一 ディレクティブは一つで、複数指定された場合は最後の一つだけ保持
   // 一つのディレクティブ内に、サーバーネームは並べて複数可能

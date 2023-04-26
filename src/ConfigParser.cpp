@@ -35,7 +35,7 @@ void ConfigParser::Parse(Config &config) {
 
 void ConfigParser::ParseServer(Config &config) {
   Server server;
-  server.listen_ = -1;
+  server.listen_.listen_port_ = -1;
 
   SkipSpaces();
   Expect('{');
@@ -60,13 +60,14 @@ void ConfigParser::ParseServer(Config &config) {
 
 void ConfigParser::ParseListen(Server &server) {
   SkipSpaces();
-  std::string port_str = GetWord();
+  std::string listen_str = GetWord();
   SkipSpaces();
   Expect(';');
-  AssertPort(server.listen_, port_str);
+  AssertListen(server.listen_, listen_str);
 
   // for debug
-  std::cout << "listen: " << server.listen_ << std::endl;
+  std::cout << "listen: " << server.listen_.listen_ip_ << ":"
+            << server.listen_.listen_port_ << std::endl;
 }
 
 void ConfigParser::ParseServerName(Server &server) {
@@ -300,18 +301,63 @@ void ConfigParser::ParseReturn(Location &location) {
 
 // validator
 void ConfigParser::AssertServer(const Server &server) {
-  if (server.listen_ == -1) {
+  if (server.listen_.listen_port_ == -1) {
     throw ParserException("Listen port is not set");
   }
 }
 
-void ConfigParser::AssertPort(int &dest_port, const std::string &port_str) {
-  if (!ws_strtoi<int>(&dest_port, port_str)) {
-    throw ParserException("Invalid port number: %s", port_str.c_str());
+void ConfigParser::AssertListen(Listen &dest_listen,
+                                const std::string &listen_str) {
+  int port;
+  std::string ip_str;
+  std::string port_str;
+
+  size_t colon_pos = listen_str.find(':');
+  if (colon_pos == std::string::npos) {
+    ip_str = "0.0.0.0";
+    port_str = listen_str;
+  } else {
+    ip_str = listen_str.substr(0, colon_pos);
+    port_str = listen_str.substr(colon_pos + 1);
   }
-  if (dest_port < 0 || dest_port > kMaxPortNumber) {
-    throw ParserException("Invalid port number: %d", dest_port);
+
+  if (!IsValidIp(ip_str)) {
+    throw ParserException("Invalid Listen: %s", listen_str.c_str());
   }
+  if (!ws_strtoi<int>(&port, port_str) || port < 0 || port > kMaxPortNumber) {
+    throw ParserException("Invalid Listen: %s", listen_str.c_str());
+  }
+  dest_listen.listen_ip_port_ = ip_str + ":" + port_str;
+  dest_listen.listen_ip_ = ip_str;
+  dest_listen.listen_port_ = port;
+}
+
+bool ConfigParser::IsValidIp(const std::string &ip_str) {
+  std::string::const_iterator it_start = ip_str.begin();
+  std::string::const_iterator it_end = ip_str.begin();
+
+  std::string octet_str;
+  int num_octets = 0;
+  int octet;
+
+  while (true) {
+    while (it_end != ip_str.end() && *it_end != '.') {
+      it_end++;
+    }
+    octet_str = std::string(it_start, it_end);
+    if (++num_octets > 4) {
+      return false;
+    }
+    if (!ws_strtoi<int>(&octet, octet_str) || octet < 0 || octet > 255) {
+      return false;
+    }
+    if (it_end == ip_str.end()) {
+      break;
+    }
+    it_start = it_end + 1;
+    it_end = it_start;
+  }
+  return num_octets == 4;
 }
 
 void ConfigParser::AssertServerName(const std::string &server_name) {

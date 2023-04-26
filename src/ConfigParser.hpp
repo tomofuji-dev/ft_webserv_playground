@@ -56,7 +56,8 @@ private:
 
   // validator
   void AssertServer(const Server &server);
-  void AssertPort(int &dest_port, const std::string &port_str);
+  void AssertListen(Listen &dest_listen, const std::string &listen_str);
+  bool IsValidIp(const std::string &ip_str);
   void AssertServerName(const std::string &server_name);
   bool IsValidLabel(const std::string &server_name,
                     std::string::const_iterator &it);

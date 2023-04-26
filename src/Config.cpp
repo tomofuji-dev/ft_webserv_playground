@@ -25,7 +25,8 @@ std::ostream &operator<<(std::ostream &os, const Config &conf) {
   for (std::vector<Server>::const_iterator server_iter = server_vec.begin();
        server_iter != server_vec.end(); ++server_iter) {
     os << "server {" << std::endl;
-    os << "  listen " << server_iter->listen_ << ";" << std::endl;
+    os << "  listen " << server_iter->listen_.listen_ip_ << ":"
+       << server_iter->listen_.listen_port_ << ";" << std::endl;
     os << "  server_name";
     for (std::vector<std::string>::const_iterator name_iter =
              server_iter->server_names_.begin();

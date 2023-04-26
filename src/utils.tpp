@@ -1,15 +1,24 @@
 #include "utils.hpp"
 #include <sstream>
 
+// 正の整数のみ
 template <typename T> bool ws_strtoi(T *dest, const std::string src) {
+  T tmp;
   for (std::string::const_iterator it = src.begin(); it != src.end(); it++) {
     if (!isdigit(*it)) {
       return false;
     }
   }
   std::stringstream ss(src);
-  ss >> *dest;
-  return !ss.fail();
+  ss >> tmp;
+  if (ss.fail()) {
+    return false;
+  }
+  if (tmp != 0 && src[0] == '0') {
+    return false;
+  }
+  *dest = tmp;
+  return true;
 }
 
 template <typename T> T mul_assert_overflow(T lhs, T rhs) {
