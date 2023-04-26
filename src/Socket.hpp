@@ -4,6 +4,8 @@
 #include <netinet/in.h>
 #include <vector>
 
+class Epoll; // 相互参照
+
 // ------------------------------------------------------------------
 // 継承用のクラス
 
@@ -22,6 +24,7 @@ public:
   void SetFd(int fd);
   int SetNonBlocking() const;
   struct sockaddr_in *GetSockaddr();
+  virtual int process_socket(Epoll *epoll_map, int event_fd, void *data) = 0;
 };
 
 // ------------------------------------------------------------------
@@ -43,6 +46,7 @@ public:
 
   int OnReadable(int recv_flag);
   int OnWritable();
+  int process_socket(Epoll *epoll_map, int event_fd, void *data);
 };
 
 // ------------------------------------------------------------------
@@ -59,6 +63,7 @@ public:
   int Create();
   int Passive(int port);
   ConnSocket *Accept();
+  int process_socket(Epoll *epoll_map, int event_fd, void *data);
 };
 
 #endif

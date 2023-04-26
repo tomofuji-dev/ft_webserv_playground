@@ -1,4 +1,5 @@
 #include "Epoll.hpp"
+#include "Socket.hpp"
 #include "define.hpp"
 #include <sys/epoll.h>
 #include <unistd.h>
