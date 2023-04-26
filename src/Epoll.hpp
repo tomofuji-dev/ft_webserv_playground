@@ -4,6 +4,8 @@
 #include "Socket.hpp"
 #include <map>
 
+class ASocket; // 相互参照
+
 class Epoll {
 private:
   int epoll_fd_;

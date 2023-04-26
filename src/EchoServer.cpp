@@ -29,71 +29,11 @@ int main() {
     }
     for (int i = 0; i < nfds; i++) {
       int event_fd = events[i].data.fd;
+      ASocket *event_socket = epoll_map->GetSocket(event_fd);
       uint32_t event_mask = events[i].events;
-      if (event_fd == server_socket->GetFd()) {
-        process_server_socket(epoll_map, event_fd);
-      } else {
-        process_client_socket(epoll_map, event_fd, event_mask);
-      }
+      event_socket->process_socket(epoll_map, event_fd, (void *)&event_mask);
     }
   }
   delete epoll_map;
-  return SUCCESS;
-}
-
-int process_server_socket(Epoll *epoll_map, int event_fd) {
-  // 接続要求を処理
-  static uint32_t epoll_mask =
-      EPOLLIN | EPOLLPRI | EPOLLRDHUP | EPOLLOUT | EPOLLET;
-  ListenSocket *server_socket =
-      reinterpret_cast<ListenSocket *>(epoll_map->GetSocket(event_fd));
-
-  ConnSocket *client_socket = server_socket->Accept();
-  if (client_socket == NULL ||
-      epoll_map->Add(client_socket, epoll_mask) == FAILURE) {
-    delete client_socket;
-    return FAILURE;
-  }
-  return SUCCESS;
-}
-
-int process_client_socket(Epoll *epoll_map, int event_fd, uint32_t event_mask) {
-  // clientからの通信を処理
-  ConnSocket *client_socket =
-      reinterpret_cast<ConnSocket *>(epoll_map->GetSocket(event_fd));
-  if (client_socket == NULL) {
-    return FAILURE;
-  }
-  if (event_mask & EPOLLIN) {
-    // 受信
-    if (client_socket->OnReadable(0) == FAILURE) {
-      epoll_map->Del(client_socket->GetFd());
-      return FAILURE;
-    }
-  }
-  if (event_mask & EPOLLPRI) {
-    // 緊急メッセージ
-    if (client_socket->OnReadable(MSG_OOB) == FAILURE) {
-      epoll_map->Del(client_socket->GetFd());
-      return FAILURE;
-    }
-  }
-  if (event_mask & EPOLLOUT) {
-    // 送信
-    if (client_socket->OnWritable() == FAILURE) {
-      epoll_map->Del(client_socket->GetFd());
-      return FAILURE;
-    }
-  }
-  if (event_mask & EPOLLRDHUP) {
-    // クライアントが切断
-    shutdown(client_socket->GetFd(), SHUT_RD);
-    shutdown(client_socket->GetFd(), SHUT_WR);
-    epoll_map->Del(client_socket->GetFd());
-  }
-  if (event_mask & EPOLLERR || event_mask & EPOLLHUP) {
-    // エラー
-    epoll_map->Del(client_socket->GetFd());
-  }
   return SUCCESS;
 }
