@@ -13,7 +13,7 @@
 // ------------------------------------------------------------------
 // 継承用のクラス
 
-ASocket::ASocket() : fd_(-1) { memset(&sockaddr_, 0, sizeof(sockaddr_)); }
+ASocket::ASocket(std::vector<VServer> config) : fd_(-1), config_(config) {}
 
 ASocket::ASocket(const ASocket &src) : fd_(src.fd_) {}
 
@@ -30,8 +30,6 @@ int ASocket::GetFd() const { return fd_; }
 
 void ASocket::SetFd(int fd) { fd_ = fd; }
 
-struct sockaddr_in *ASocket::GetSockaddr() { return &sockaddr_; }
-
 int ASocket::SetNonBlocking() const {
   int flags = fcntl(fd_, F_GETFL, 0);
   if (flags == -1) {
@@ -46,7 +44,7 @@ int ASocket::SetNonBlocking() const {
 // ------------------------------------------------------------------
 // 通信用のソケット
 
-ConnSocket::ConnSocket() : ASocket() {}
+ConnSocket::ConnSocket(std::vector<VServer> config) : ASocket(config) {}
 
 ConnSocket::ConnSocket(const ConnSocket &src) : ASocket(src) {}
 
@@ -60,12 +58,27 @@ ConnSocket &ConnSocket::operator=(const ConnSocket &rhs) {
 }
 
 void ConnSocket::OnMessageReceived() {
+  // request_.ContainBody(recv_buffer_);
+  // std::vector<char> response = ProcessRequest(request_);
+  // send_buffer_.insert(response.begin(), response.end());
+
   send_buffer_.insert(send_buffer_.end(), recv_buffer_.begin(),
                       recv_buffer_.end());
   recv_buffer_.erase(recv_buffer_.begin(), recv_buffer_.end());
 }
 
-bool ConnSocket::IsMessageComplete() const { return true; }
+bool ConnSocket::IsMessageComplete() const {
+  return true;
+  // if (request_.header_.IsComplete()) {
+  //   return request_.IsComplete(recv_buffer_);
+  // }
+  // // CRLF*2がない場合はヘッダの受信が完了していない
+  // if (!IsContain2CRLF(recv_buffer_)) {
+  //   return false;
+  // }
+  // request_.header_.Parse(recv_buffer_);
+  // return request_.IsComplete(recv_buffer_);
+}
 
 // 0: 引き続きsocketを利用 -1: socketを閉じる
 int ConnSocket::OnReadable(int recv_flag) {
@@ -168,8 +181,7 @@ int ConnSocket::ProcessSocket(Epoll *epoll_map, int event_fd, void *data) {
 // ------------------------------------------------------------------
 // listen用のソケット
 
-ListenSocket::ListenSocket(std::vector<VServer> config)
-    : ASocket(), config_(config) {}
+ListenSocket::ListenSocket(std::vector<VServer> config) : ASocket(config) {}
 
 ListenSocket::ListenSocket(const ListenSocket &src) : ASocket(src) {}
 
@@ -191,14 +203,15 @@ int ListenSocket::Create() {
 }
 
 int ListenSocket::Passive() {
+  struct sockaddr_in sockaddr;
   std::string ip = config_[0].listen_.listen_ip_;
   int port = config_[0].listen_.listen_port_;
 
-  sockaddr_.sin_family = AF_INET;
-  sockaddr_.sin_addr.s_addr = inet_addr(ip.c_str());
-  sockaddr_.sin_port = htons(port);
+  sockaddr.sin_family = AF_INET;
+  sockaddr.sin_addr.s_addr = inet_addr(ip.c_str());
+  sockaddr.sin_port = htons(port);
   // Bind server socket to address
-  if (bind(fd_, (struct sockaddr *)&sockaddr_, sizeof(sockaddr_)) == -1) {
+  if (bind(fd_, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) == -1) {
     // error handling
     return FAILURE;
   }
@@ -209,11 +222,11 @@ int ListenSocket::Passive() {
 }
 
 ConnSocket *ListenSocket::Accept() {
-  ConnSocket *conn_socket = new ConnSocket();
-  struct sockaddr_in *client_addr = conn_socket->GetSockaddr();
-  socklen_t addrlen = sizeof(*client_addr);
+  ConnSocket *conn_socket = new ConnSocket(config_);
+  struct sockaddr_in client_addr;
+  socklen_t addrlen = sizeof(client_addr);
 
-  conn_socket->SetFd(accept(fd_, (struct sockaddr *)client_addr, &addrlen));
+  conn_socket->SetFd(accept(fd_, (struct sockaddr *)&client_addr, &addrlen));
   if (conn_socket->GetFd() < 0) {
     delete conn_socket;
     return NULL;

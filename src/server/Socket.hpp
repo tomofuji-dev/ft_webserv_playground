@@ -13,10 +13,10 @@ class Epoll; // 相互参照
 class ASocket {
 protected:
   int fd_;
-  struct sockaddr_in sockaddr_;
+  std::vector<VServer> config_;
 
 public:
-  ASocket();
+  ASocket(std::vector<VServer> config);
   ASocket(const ASocket &src);
   virtual ~ASocket();
   ASocket &operator=(const ASocket &rhs);
@@ -24,7 +24,6 @@ public:
   int GetFd() const;
   void SetFd(int fd);
   int SetNonBlocking() const;
-  struct sockaddr_in *GetSockaddr();
   virtual int ProcessSocket(Epoll *epoll_map, int event_fd, void *data) = 0;
 };
 
@@ -40,7 +39,7 @@ private:
   bool IsMessageComplete() const;
 
 public:
-  ConnSocket();
+  ConnSocket(std::vector<VServer> config);
   ConnSocket(const ConnSocket &src);
   ~ConnSocket();
   ConnSocket &operator=(const ConnSocket &rhs);
@@ -55,10 +54,8 @@ public:
 
 class ListenSocket : public ASocket {
 private:
-  std::vector<VServer> config_;
-
 public:
-  ListenSocket(std::vector<VServer> config_);
+  ListenSocket(std::vector<VServer> config);
   ListenSocket(const ListenSocket &src);
   ~ListenSocket();
   ListenSocket &operator=(const ListenSocket &rhs);
