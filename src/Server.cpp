@@ -15,6 +15,7 @@ void RegisterListenSocket(Epoll &epoll, const Config &config) {
   }
   for (ConfigMap::iterator it = config_map.begin(); it != config_map.end();
        it++) {
+    std::cout << it->first << std::endl;
     ListenSocket *socket = new ListenSocket(it->second);
     if (socket->Create() == FAILURE || socket->Passive() == FAILURE ||
         epoll.Add(socket, epoll_mask) == FAILURE) {
@@ -53,6 +54,7 @@ int main(int argc, char *argv[]) {
     Config config;
     Epoll epoll;
     ParseConfig(config, argv[1]);
+    std::cout << config << std::endl;
     RegisterListenSocket(epoll, config);
     ServerLoop(epoll);
   } catch (const std::exception &e) {

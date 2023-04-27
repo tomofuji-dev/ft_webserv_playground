@@ -107,6 +107,10 @@ int ConnSocket::OnWritable() {
     bytes_written = send(fd_, send_buffer_.data(), send_buffer_.size(), 0);
 
     if (bytes_written > 0) {
+      for (int i = 0; i < bytes_written; i++) {
+        std::cout << send_buffer_[i];
+      }
+      std::cout << std::endl;
       send_buffer_.erase(send_buffer_.begin(),
                          send_buffer_.begin() + bytes_written);
     } else if (bytes_written < 0 && errno != EAGAIN) {
@@ -191,7 +195,7 @@ int ListenSocket::Passive() {
   int port = config_[0].listen_.listen_port_;
 
   sockaddr_.sin_family = AF_INET;
-  sockaddr_.sin_addr.s_addr = htonl(inet_addr(ip.c_str()));
+  sockaddr_.sin_addr.s_addr = inet_addr(ip.c_str());
   sockaddr_.sin_port = htons(port);
   // Bind server socket to address
   if (bind(fd_, (struct sockaddr *)&sockaddr_, sizeof(sockaddr_)) == -1) {
