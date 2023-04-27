@@ -46,7 +46,7 @@ void ServerLoop(Epoll &epoll) {
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {
-    std::cerr << "Usage: ./EchoServer [config_file]" << std::endl;
+    std::cerr << "Usage: ./Server [config_file]" << std::endl;
     return FAILURE;
   }
 
