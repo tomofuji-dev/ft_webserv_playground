@@ -38,9 +38,14 @@ struct Location {
   // 任意 単一 ステータスコードと、その時に返すファイルのパス(emptyを許容する)
 };
 
-struct Server { // 各バーチャルサーバーの設定を格納する
-  int listen_;  // 必須 単一
+struct Listen { // 単一
+  std::string listen_ip_port_;
+  std::string listen_ip_;
+  int listen_port_;
+};
 
+struct VServer {  // 各バーチャルサーバーの設定を格納する
+  Listen listen_; // 必須 単一
   std::vector<std::string> server_names_;
   // 任意 単一 ディレクティブは一つで、複数指定された場合は最後の一つだけ保持
   // 一つのディレクティブ内に、サーバーネームは並べて複数可能
@@ -48,22 +53,25 @@ struct Server { // 各バーチャルサーバーの設定を格納する
   std::vector<Location> locations_; // 任意 複数可
 };
 
+typedef std::map<std::string, std::vector<VServer> > ConfigMap;
+
 class Config {
 public:
   Config();
   ~Config();
 
-  void AddServer(const Server &server);
-  std::vector<Server> GetServerVec() const;
+  void AddServer(const VServer &server);
+  std::vector<VServer> GetServerVec() const;
 
 private:
-  std::vector<Server> server_vec_; // 必須 複数可 複数の場合、一番上がデフォ
+  std::vector<VServer> server_vec_; // 必須 複数可 複数の場合、一番上がデフォ
   // 不使用だが、コンパイラが自動生成し、予期せず使用するのを防ぐために記述
   Config(const Config &other);
   Config &operator=(const Config &other);
 };
 
 void ParseConfig(Config &dest, const char *src_file);
+ConfigMap ConfigToMap(const Config &config);
 std::ostream &operator<<(std::ostream &os, const Config &conf);
 
 #endif

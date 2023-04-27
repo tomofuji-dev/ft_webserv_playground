@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdarg.h>
 
 ConfigParser::ConfigParser(const char *filepath)
     : file_content_(LoadFile(filepath)), it_(file_content_.begin()) {}
@@ -34,8 +35,8 @@ void ConfigParser::Parse(Config &config) {
 }
 
 void ConfigParser::ParseServer(Config &config) {
-  Server server;
-  server.listen_ = -1;
+  VServer server;
+  server.listen_.listen_port_ = -1;
 
   SkipSpaces();
   Expect('{');
@@ -58,18 +59,15 @@ void ConfigParser::ParseServer(Config &config) {
   config.AddServer(server);
 }
 
-void ConfigParser::ParseListen(Server &server) {
+void ConfigParser::ParseListen(VServer &server) {
   SkipSpaces();
-  std::string port_str = GetWord();
+  std::string listen_str = GetWord();
   SkipSpaces();
   Expect(';');
-  AssertPort(server.listen_, port_str);
-
-  // for debug
-  std::cout << "listen: " << server.listen_ << std::endl;
+  AssertListen(server.listen_, listen_str);
 }
 
-void ConfigParser::ParseServerName(Server &server) {
+void ConfigParser::ParseServerName(VServer &server) {
   std::vector<std::string> new_server_names;
   while (!IsEof() && *it_ != ';') {
     SkipSpaces();
@@ -80,26 +78,15 @@ void ConfigParser::ParseServerName(Server &server) {
   }
   Expect(';');
   server.server_names_ = new_server_names;
-
-  // for debug
-  std::cout << "server_name: ";
-  for (std::vector<std::string>::iterator it = server.server_names_.begin();
-       it != server.server_names_.end(); ++it) {
-    std::cout << *it << " ";
-  }
-  std::cout << std::endl;
 }
 
-void ConfigParser::ParseLocation(Server &server) {
+void ConfigParser::ParseLocation(VServer &server) {
 
   Location location;
   SetLocationDefault(location);
 
   SkipSpaces();
   location.path_ = GetWord();
-  // for debug
-  std::cout << "location"
-            << " " << location.path_ << std::endl;
   SkipSpaces();
   Expect('{');
   while (!IsEof() && *it_ != '}') {
@@ -149,9 +136,6 @@ void ConfigParser::ParseMatch(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertMatch(location.match_, match_str);
-
-  // for debug
-  std::cout << "match: " << location.match_ << std::endl;
 }
 
 void ConfigParser::ParseAllowMethod(Location &location) {
@@ -165,15 +149,6 @@ void ConfigParser::ParseAllowMethod(Location &location) {
     AssertAllowMethod(location.allow_method_, method_str);
   }
   Expect(';');
-
-  // for debug
-  std::cout << "allow_method: ";
-  const char *method_str[] = {"GET", "POST", "DELETE"};
-  for (std::set<method_type>::iterator it = location.allow_method_.begin();
-       it != location.allow_method_.end(); ++it) {
-    std::cout << method_str[*it] << " ";
-  }
-  std::cout << std::endl;
 }
 
 void ConfigParser::ParseMaxBodySize(Location &location) {
@@ -182,9 +157,6 @@ void ConfigParser::ParseMaxBodySize(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertMaxBodySize(location.max_body_size_, size_str);
-
-  // for debug
-  std::cout << "max_body_size: " << location.max_body_size_ << std::endl;
 }
 
 void ConfigParser::ParseRoot(Location &location) {
@@ -193,9 +165,6 @@ void ConfigParser::ParseRoot(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertRoot(location.root_);
-
-  // for debug
-  std::cout << "root: " << location.root_ << std::endl;
 }
 
 void ConfigParser::ParseIndex(Location &location) {
@@ -206,14 +175,6 @@ void ConfigParser::ParseIndex(Location &location) {
     AssertIndex(location.index_, index_str);
   }
   Expect(';');
-
-  // for debug
-  std::cout << "index: ";
-  for (std::vector<std::string>::iterator it = location.index_.begin();
-       it != location.index_.end(); ++it) {
-    std::cout << *it << " ";
-  }
-  std::cout << std::endl;
 }
 
 void ConfigParser::ParseIsCgi(Location &location) {
@@ -222,9 +183,6 @@ void ConfigParser::ParseIsCgi(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertBool(location.is_cgi_, is_cgi_str);
-
-  // for debug
-  std::cout << "is_cgi: " << location.is_cgi_ << std::endl;
 }
 
 void ConfigParser::ParseCgiPath(Location &location) {
@@ -233,9 +191,6 @@ void ConfigParser::ParseCgiPath(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertCgiPath(location.cgi_path_);
-
-  // for debug
-  std::cout << "cgi_path: " << location.cgi_path_ << std::endl;
 }
 
 void ConfigParser::ParseErrorPages(Location &location) {
@@ -255,14 +210,6 @@ void ConfigParser::ParseErrorPages(Location &location) {
     AssertErrorPages(location.error_pages_, error_codes, error_page_str);
   }
   Expect(';');
-
-  // for debug
-  std::cout << "error_pages: ";
-  for (std::map<int, std::string>::iterator it = location.error_pages_.begin();
-       it != location.error_pages_.end(); ++it) {
-    std::cout << it->first << " " << it->second << " ";
-  }
-  std::cout << std::endl;
 }
 
 void ConfigParser::ParseAutoIndex(Location &location) {
@@ -271,9 +218,6 @@ void ConfigParser::ParseAutoIndex(Location &location) {
   SkipSpaces();
   Expect(';');
   AssertBool(location.autoindex_, autoindex_str);
-
-  // for debug
-  std::cout << "autoindex: " << location.autoindex_ << std::endl;
 }
 
 void ConfigParser::ParseReturn(Location &location) {
@@ -292,26 +236,67 @@ void ConfigParser::ParseReturn(Location &location) {
   }
   Expect(';');
   AssertReturn(location.return_, return_code_str, return_path_str);
-
-  // for debug
-  std::cout << "return: " << location.return_.first << " "
-            << location.return_.second << std::endl;
 }
 
 // validator
-void ConfigParser::AssertServer(const Server &server) {
-  if (server.listen_ == -1) {
+void ConfigParser::AssertServer(const VServer &server) {
+  if (server.listen_.listen_port_ == -1) {
     throw ParserException("Listen port is not set");
   }
 }
 
-void ConfigParser::AssertPort(int &dest_port, const std::string &port_str) {
-  if (!ws_strtoi<int>(&dest_port, port_str)) {
-    throw ParserException("Invalid port number: %s", port_str.c_str());
+void ConfigParser::AssertListen(Listen &dest_listen,
+                                const std::string &listen_str) {
+  int port;
+  std::string ip_str;
+  std::string port_str;
+
+  size_t colon_pos = listen_str.find(':');
+  if (colon_pos == std::string::npos) {
+    ip_str = "0.0.0.0";
+    port_str = listen_str;
+  } else {
+    ip_str = listen_str.substr(0, colon_pos);
+    port_str = listen_str.substr(colon_pos + 1);
   }
-  if (dest_port < 0 || dest_port > kMaxPortNumber) {
-    throw ParserException("Invalid port number: %d", dest_port);
+
+  if (!IsValidIp(ip_str)) {
+    throw ParserException("Invalid Listen: %s", listen_str.c_str());
   }
+  if (!ws_strtoi<int>(&port, port_str) || port < 0 || port > kMaxPortNumber) {
+    throw ParserException("Invalid Listen: %s", listen_str.c_str());
+  }
+  dest_listen.listen_ip_port_ = ip_str + ":" + port_str;
+  dest_listen.listen_ip_ = ip_str;
+  dest_listen.listen_port_ = port;
+}
+
+bool ConfigParser::IsValidIp(const std::string &ip_str) {
+  std::string::const_iterator it_start = ip_str.begin();
+  std::string::const_iterator it_end = ip_str.begin();
+
+  std::string octet_str;
+  int num_octets = 0;
+  int octet;
+
+  while (true) {
+    while (it_end != ip_str.end() && *it_end != '.') {
+      it_end++;
+    }
+    octet_str = std::string(it_start, it_end);
+    if (++num_octets > 4) {
+      return false;
+    }
+    if (!ws_strtoi<int>(&octet, octet_str) || octet < 0 || octet > 255) {
+      return false;
+    }
+    if (it_end == ip_str.end()) {
+      break;
+    }
+    it_start = it_end + 1;
+    it_end = it_start;
+  }
+  return num_octets == 4;
 }
 
 void ConfigParser::AssertServerName(const std::string &server_name) {
@@ -354,7 +339,7 @@ bool ConfigParser::IsValidLabel(const std::string &server_name,
   return true;
 }
 
-void ConfigParser::AssertLocation(const Location &location) {}
+void ConfigParser::AssertLocation(const Location &location) { (void)location; }
 
 void ConfigParser::AssertMatch(match_type &dest_match,
                                const std::string &match_str) {
@@ -424,6 +409,7 @@ void ConfigParser::AssertMaxBodySize(uint64_t &dest_size,
 
 void ConfigParser::AssertRoot(const std::string &root) {
   // AssertPath(root);
+  (void)root;
 }
 
 void ConfigParser::AssertIndex(std::vector<std::string> &dest_index,
@@ -443,6 +429,7 @@ void ConfigParser::AssertBool(bool &dest_bool, const std::string &bool_str) {
 
 void ConfigParser::AssertCgiPath(const std::string &cgi_path) {
   // AssertPath(cgi_path);
+  (void)cgi_path;
 }
 
 void ConfigParser::AssertErrorPages(

@@ -1,6 +1,7 @@
 #ifndef _SOCKET_HPP_
 #define _SOCKET_HPP_
 
+#include "Config.hpp"
 #include <netinet/in.h>
 #include <vector>
 
@@ -24,7 +25,7 @@ public:
   void SetFd(int fd);
   int SetNonBlocking() const;
   struct sockaddr_in *GetSockaddr();
-  virtual int process_socket(Epoll *epoll_map, int event_fd, void *data) = 0;
+  virtual int ProcessSocket(Epoll *epoll_map, int event_fd, void *data) = 0;
 };
 
 // ------------------------------------------------------------------
@@ -46,7 +47,7 @@ public:
 
   int OnReadable(int recv_flag);
   int OnWritable();
-  int process_socket(Epoll *epoll_map, int event_fd, void *data);
+  int ProcessSocket(Epoll *epoll_map, int event_fd, void *data);
 };
 
 // ------------------------------------------------------------------
@@ -54,16 +55,18 @@ public:
 
 class ListenSocket : public ASocket {
 private:
+  std::vector<VServer> config_;
+
 public:
-  ListenSocket();
+  ListenSocket(std::vector<VServer> config_);
   ListenSocket(const ListenSocket &src);
   ~ListenSocket();
   ListenSocket &operator=(const ListenSocket &rhs);
 
   int Create();
-  int Passive(int port);
+  int Passive();
   ConnSocket *Accept();
-  int process_socket(Epoll *epoll_map, int event_fd, void *data);
+  int ProcessSocket(Epoll *epoll_map, int event_fd, void *data);
 };
 
 #endif

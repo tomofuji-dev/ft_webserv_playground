@@ -1,6 +1,7 @@
 #include "Socket.hpp"
 #include "Epoll.hpp"
 #include "define.hpp"
+#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -106,6 +107,10 @@ int ConnSocket::OnWritable() {
     bytes_written = send(fd_, send_buffer_.data(), send_buffer_.size(), 0);
 
     if (bytes_written > 0) {
+      for (int i = 0; i < bytes_written; i++) {
+        std::cout << send_buffer_[i];
+      }
+      std::cout << std::endl;
       send_buffer_.erase(send_buffer_.begin(),
                          send_buffer_.begin() + bytes_written);
     } else if (bytes_written < 0 && errno != EAGAIN) {
@@ -118,7 +123,7 @@ int ConnSocket::OnWritable() {
   return SUCCESS;
 }
 
-int ConnSocket::process_socket(Epoll *epoll_map, int event_fd, void *data) {
+int ConnSocket::ProcessSocket(Epoll *epoll_map, int event_fd, void *data) {
   // clientからの通信を処理
   uint32_t event_mask = *(static_cast<uint32_t *>(data));
   ConnSocket *client_socket =
@@ -163,7 +168,8 @@ int ConnSocket::process_socket(Epoll *epoll_map, int event_fd, void *data) {
 // ------------------------------------------------------------------
 // listen用のソケット
 
-ListenSocket::ListenSocket() : ASocket() {}
+ListenSocket::ListenSocket(std::vector<VServer> config)
+    : ASocket(), config_(config) {}
 
 ListenSocket::ListenSocket(const ListenSocket &src) : ASocket(src) {}
 
@@ -184,11 +190,13 @@ int ListenSocket::Create() {
   return SetNonBlocking();
 }
 
-int ListenSocket::Passive(int port) {
-  sockaddr_.sin_family = AF_INET;
-  sockaddr_.sin_addr.s_addr = htonl(INADDR_ANY);
-  sockaddr_.sin_port = htons(port);
+int ListenSocket::Passive() {
+  std::string ip = config_[0].listen_.listen_ip_;
+  int port = config_[0].listen_.listen_port_;
 
+  sockaddr_.sin_family = AF_INET;
+  sockaddr_.sin_addr.s_addr = inet_addr(ip.c_str());
+  sockaddr_.sin_port = htons(port);
   // Bind server socket to address
   if (bind(fd_, (struct sockaddr *)&sockaddr_, sizeof(sockaddr_)) == -1) {
     // error handling
@@ -217,7 +225,7 @@ ConnSocket *ListenSocket::Accept() {
   return conn_socket;
 }
 
-int ListenSocket::process_socket(Epoll *epoll_map, int event_fd, void *data) {
+int ListenSocket::ProcessSocket(Epoll *epoll_map, int event_fd, void *data) {
   // 接続要求を処理
   (void)data;
   static uint32_t epoll_mask =
