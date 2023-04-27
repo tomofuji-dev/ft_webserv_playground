@@ -6,9 +6,25 @@ Config::Config() {}
 
 Config::~Config() {}
 
-void Config::AddServer(const Server &server) { server_vec_.push_back(server); }
+void Config::AddServer(const VServer &server) { server_vec_.push_back(server); }
 
-std::vector<Server> Config::GetServerVec() const { return server_vec_; }
+std::vector<VServer> Config::GetServerVec() const { return server_vec_; }
+
+ConfigMap ConfigToMap(const Config &config) {
+  ConfigMap config_map;
+  std::vector<VServer> server_vec = config.GetServerVec();
+  for (std::vector<VServer>::const_iterator server_iter = server_vec.begin();
+       server_iter != server_vec.end(); server_iter++) {
+    if (config_map.find(server_iter->listen_.listen_ip_port_) ==
+        config_map.end()) {
+      config_map[server_iter->listen_.listen_ip_port_] =
+          std::vector<VServer>(1, *server_iter);
+    } else {
+      config_map[server_iter->listen_.listen_ip_port_].push_back(*server_iter);
+    }
+  }
+  return config_map;
+}
 
 void ParseConfig(Config &dest, const char *src_file) {
   ConfigParser parser(src_file); // Load file
@@ -16,13 +32,13 @@ void ParseConfig(Config &dest, const char *src_file) {
 }
 
 std::ostream &operator<<(std::ostream &os, const Config &conf) {
-  std::vector<Server> server_vec = conf.GetServerVec();
+  std::vector<VServer> server_vec = conf.GetServerVec();
   if (server_vec.empty()) {
     os << "No server config" << std::endl;
     return os;
   }
 
-  for (std::vector<Server>::const_iterator server_iter = server_vec.begin();
+  for (std::vector<VServer>::const_iterator server_iter = server_vec.begin();
        server_iter != server_vec.end(); ++server_iter) {
     os << "server {" << std::endl;
     os << "  listen " << server_iter->listen_.listen_ip_ << ":"
@@ -77,17 +93,4 @@ std::ostream &operator<<(std::ostream &os, const Config &conf) {
     os << "}" << std::endl;
   }
   return os;
-}
-
-int main() {
-  try {
-    Config config;
-    ParseConfig(config, "config.txt");
-    std::cout << config;
-  } catch (const std::exception &e) {
-    std::cerr << "Error: " << e.what() << std::endl;
-    return 1;
-  }
-
-  return 0;
 }

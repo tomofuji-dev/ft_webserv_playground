@@ -31,16 +31,16 @@ private:
   // ドメインの各ラベル(ピリオド区切りの文字列)の最大長
   static const int kMaxDomainLabelLength = 63;
   // ポート番号の最大値
-  static const unsigned long kMaxPortNumber = 65535;
+  static const int kMaxPortNumber = 65535;
 
   std::string LoadFile(const char *filepath);
 
   // parser
   void ParseServer(Config &config);
 
-  void ParseListen(Server &server);
-  void ParseServerName(Server &server);
-  void ParseLocation(Server &server);
+  void ParseListen(VServer &server);
+  void ParseServerName(VServer &server);
+  void ParseLocation(VServer &server);
   void SetLocationDefault(Location &location);
 
   void ParseMatch(Location &location);
@@ -55,7 +55,7 @@ private:
   void ParseReturn(Location &location);
 
   // validator
-  void AssertServer(const Server &server);
+  void AssertServer(const VServer &server);
   void AssertListen(Listen &dest_listen, const std::string &listen_str);
   bool IsValidIp(const std::string &ip_str);
   void AssertServerName(const std::string &server_name);

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <stdarg.h>
 
 ConfigParser::ConfigParser(const char *filepath)
     : file_content_(LoadFile(filepath)), it_(file_content_.begin()) {}
@@ -34,7 +35,7 @@ void ConfigParser::Parse(Config &config) {
 }
 
 void ConfigParser::ParseServer(Config &config) {
-  Server server;
+  VServer server;
   server.listen_.listen_port_ = -1;
 
   SkipSpaces();
@@ -58,7 +59,7 @@ void ConfigParser::ParseServer(Config &config) {
   config.AddServer(server);
 }
 
-void ConfigParser::ParseListen(Server &server) {
+void ConfigParser::ParseListen(VServer &server) {
   SkipSpaces();
   std::string listen_str = GetWord();
   SkipSpaces();
@@ -66,7 +67,7 @@ void ConfigParser::ParseListen(Server &server) {
   AssertListen(server.listen_, listen_str);
 }
 
-void ConfigParser::ParseServerName(Server &server) {
+void ConfigParser::ParseServerName(VServer &server) {
   std::vector<std::string> new_server_names;
   while (!IsEof() && *it_ != ';') {
     SkipSpaces();
@@ -79,7 +80,7 @@ void ConfigParser::ParseServerName(Server &server) {
   server.server_names_ = new_server_names;
 }
 
-void ConfigParser::ParseLocation(Server &server) {
+void ConfigParser::ParseLocation(VServer &server) {
 
   Location location;
   SetLocationDefault(location);
@@ -238,7 +239,7 @@ void ConfigParser::ParseReturn(Location &location) {
 }
 
 // validator
-void ConfigParser::AssertServer(const Server &server) {
+void ConfigParser::AssertServer(const VServer &server) {
   if (server.listen_.listen_port_ == -1) {
     throw ParserException("Listen port is not set");
   }
@@ -338,7 +339,7 @@ bool ConfigParser::IsValidLabel(const std::string &server_name,
   return true;
 }
 
-void ConfigParser::AssertLocation(const Location &location) {}
+void ConfigParser::AssertLocation(const Location &location) { (void)location; }
 
 void ConfigParser::AssertMatch(match_type &dest_match,
                                const std::string &match_str) {
@@ -408,6 +409,7 @@ void ConfigParser::AssertMaxBodySize(uint64_t &dest_size,
 
 void ConfigParser::AssertRoot(const std::string &root) {
   // AssertPath(root);
+  (void)root;
 }
 
 void ConfigParser::AssertIndex(std::vector<std::string> &dest_index,
@@ -427,6 +429,7 @@ void ConfigParser::AssertBool(bool &dest_bool, const std::string &bool_str) {
 
 void ConfigParser::AssertCgiPath(const std::string &cgi_path) {
   // AssertPath(cgi_path);
+  (void)cgi_path;
 }
 
 void ConfigParser::AssertErrorPages(

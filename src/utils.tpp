@@ -1,4 +1,5 @@
 #include "utils.hpp"
+#include <limits>
 #include <sstream>
 
 // 正の整数のみ
