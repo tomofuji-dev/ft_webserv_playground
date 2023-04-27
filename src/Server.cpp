@@ -1,7 +1,6 @@
 #include "Server.hpp"
 #include "Config.hpp"
 #include "Epoll.hpp"
-#include "Server.hpp"
 #include "Socket.hpp"
 #include "define.hpp"
 #include <sys/epoll.h>
