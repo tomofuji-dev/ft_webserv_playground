@@ -12,11 +12,11 @@ CC			=	c++
 CFLAGS		=	-Wall -Wextra -Werror -std=c++98
 RM			=	rm
 
-SRCS		=	$(SRC_DIR)/Server.cpp \
-					$(SRC_DIR)/Socket.cpp \
-					$(SRC_DIR)/Epoll.cpp \
-					$(SRC_DIR)/Config.cpp \
-					$(SRC_DIR)/ConfigParser.cpp
+SRCS		=	$(SRC_DIR)/Server/Server.cpp \
+					$(SRC_DIR)/Server/Socket.cpp \
+					$(SRC_DIR)/Server/Epoll.cpp \
+					$(SRC_DIR)/Config/Config.cpp \
+					$(SRC_DIR)/Config/ConfigParser.cpp
 OBJS		=	$(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 DEPS		=	$(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.d)
 .PHONY: $(DEPS)
