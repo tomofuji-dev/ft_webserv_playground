@@ -124,12 +124,10 @@ int ConnSocket::OnWritable() {
       std::cout << std::endl;
       send_buffer_.erase(send_buffer_.begin(),
                          send_buffer_.begin() + bytes_written);
-    } else if (bytes_written < 0 && errno != EAGAIN) {
+    } else if (bytes_written < 0) {
       // write, sendが失敗した場合: 呼び出し側でfdを閉じる
       return FAILURE;
     }
-    // bytes_written == 0 || errno == EAGAIN || errno == EWOULDBLOCK ->
-    // 正常な挙動として引き続きsocketを利用
   }
   return SUCCESS;
 }
