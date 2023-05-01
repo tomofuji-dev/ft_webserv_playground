@@ -100,11 +100,9 @@ int ConnSocket::OnReadable(int recv_flag) {
     } else if (bytes_read == 0) {
       // クライアントが接続を閉じた場合: 呼び出し側でfdを閉じる必要がある
       return FAILURE;
-    } else if (errno != EAGAIN) {
-      // read, recvが失敗した場合: 呼び出し側でfdを閉じる
-      return FAILURE;
     } else {
-      // 受信バッファが空の場合など、読み込み準備ができていない
+      // Todo: EINTRについての検討
+      // 1024の倍数で受信した場合
       return SUCCESS;
     }
   }
