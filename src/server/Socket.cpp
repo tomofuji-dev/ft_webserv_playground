@@ -62,9 +62,8 @@ void ConnSocket::OnMessageReceived() {
   // std::vector<char> response = ProcessRequest(request_);
   // send_buffer_.insert(response.begin(), response.end());
 
-  send_buffer_.insert(send_buffer_.end(), recv_buffer_.begin(),
-                      recv_buffer_.end());
-  recv_buffer_.erase(recv_buffer_.begin(), recv_buffer_.end());
+  send_buffer_.AddString(recv_buffer_.GetString());
+  recv_buffer_.ClearBuff();
 }
 
 bool ConnSocket::IsMessageComplete() const {
@@ -81,54 +80,19 @@ bool ConnSocket::IsMessageComplete() const {
 }
 
 // 0: 引き続きsocketを利用 -1: socketを閉じる
-int ConnSocket::OnReadable(int recv_flag) {
-  char buffer[BUFFER_SIZE];
-  ssize_t bytes_read;
-
-  errno = 0;
-  while (true) {
-    bytes_read = recv(fd_, buffer, sizeof(buffer), recv_flag);
-    if (bytes_read > 0) {
-      recv_buffer_.insert(recv_buffer_.end(), buffer, buffer + bytes_read);
-
-      // Check if the message is complete and notify the application
-      if (IsMessageComplete()) {
-        // エコーサーバーの場合、recv_bufferをsend_bufferにコピーする
-        // HTTPの場合、返信内容をsend_bufferに作成して、recv_bufferを\r\n\r\n以降のものに書き換える
-        OnMessageReceived();
-      }
-    } else if (bytes_read == 0) {
-      // クライアントが接続を閉じた場合: 呼び出し側でfdを閉じる必要がある
-      return FAILURE;
-    } else {
-      // Todo: EINTRについての検討
-      // 1024の倍数で受信した場合
-      return SUCCESS;
-    }
+int ConnSocket::OnReadable() {
+  if (!recv_buffer_.ReadSocket(fd_)) {
+    return FAILURE;
   }
+  std::cout << recv_buffer_.GetString() << std::endl;
+  send_buffer_.AddString(recv_buffer_.GetString());
+  recv_buffer_.ClearBuff();
   return SUCCESS;
 }
 
 // 0: 引き続きsocketを利用 -1: socketを閉じる
 int ConnSocket::OnWritable() {
-  ssize_t bytes_written;
-
-  errno = 0;
-  if (!send_buffer_.empty()) {
-    bytes_written = send(fd_, send_buffer_.data(), send_buffer_.size(), 0);
-
-    if (bytes_written > 0) {
-      for (int i = 0; i < bytes_written; i++) {
-        std::cout << send_buffer_[i];
-      }
-      std::cout << std::endl;
-      send_buffer_.erase(send_buffer_.begin(),
-                         send_buffer_.begin() + bytes_written);
-    } else if (bytes_written < 0) {
-      // write, sendが失敗した場合: 呼び出し側でfdを閉じる
-      return FAILURE;
-    }
-  }
+  send_buffer_.SendSocket(fd_);
   return SUCCESS;
 }
 
@@ -141,15 +105,15 @@ int ConnSocket::ProcessSocket(Epoll *epoll_map, int event_fd, void *data) {
     return FAILURE;
   }
   if (event_mask & EPOLLIN) {
-    // 受信
-    if (client_socket->OnReadable(0) == FAILURE) {
+    // 受信(Todo: OnReadable(0))
+    if (client_socket->OnReadable() == FAILURE) {
       epoll_map->Del(client_socket->GetFd());
       return FAILURE;
     }
   }
   if (event_mask & EPOLLPRI) {
-    // 緊急メッセージ
-    if (client_socket->OnReadable(MSG_OOB) == FAILURE) {
+    // 緊急メッセージ(Todo: OnReadable(MSG_OOB))
+    if (client_socket->OnReadable() == FAILURE) {
       epoll_map->Del(client_socket->GetFd());
       return FAILURE;
     }

@@ -14,6 +14,7 @@ RM			=	rm
 
 SRCS		=	$(SRC_DIR)/Server/Server.cpp \
 					$(SRC_DIR)/Server/Socket.cpp \
+					$(SRC_DIR)/Server/IOBuff.cpp \
 					$(SRC_DIR)/Server/Epoll.cpp \
 					$(SRC_DIR)/Config/Config.cpp \
 					$(SRC_DIR)/Config/ConfigParser.cpp

@@ -2,6 +2,7 @@
 #define _SOCKET_HPP_
 
 #include "Config.hpp"
+#include "IOBuff.hpp"
 #include <netinet/in.h>
 #include <vector>
 
@@ -32,8 +33,8 @@ public:
 
 class ConnSocket : public ASocket {
 private:
-  std::vector<char> recv_buffer_;
-  std::vector<char> send_buffer_;
+  IOBuff recv_buffer_;
+  IOBuff send_buffer_;
 
   void OnMessageReceived();
   bool IsMessageComplete() const;
@@ -44,7 +45,7 @@ public:
   ~ConnSocket();
   ConnSocket &operator=(const ConnSocket &rhs);
 
-  int OnReadable(int recv_flag);
+  int OnReadable();
   int OnWritable();
   int ProcessSocket(Epoll *epoll_map, int event_fd, void *data);
 };
