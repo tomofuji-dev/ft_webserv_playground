@@ -3,6 +3,7 @@
 
 #include "Config.hpp"
 #include "IOBuff.hpp"
+#include "Request.hpp"
 #include <netinet/in.h>
 #include <vector>
 
@@ -15,6 +16,7 @@ class ASocket {
 protected:
   int fd_;
   std::vector<VServer> config_;
+  Request request_;
 
 public:
   ASocket(std::vector<VServer> config);
@@ -35,9 +37,6 @@ class ConnSocket : public ASocket {
 private:
   IOBuff recv_buffer_;
   IOBuff send_buffer_;
-
-  void OnMessageReceived();
-  bool IsMessageComplete() const;
 
 public:
   ConnSocket(std::vector<VServer> config);

@@ -57,36 +57,18 @@ ConnSocket &ConnSocket::operator=(const ConnSocket &rhs) {
   return *this;
 }
 
-void ConnSocket::OnMessageReceived() {
-  // request_.ContainBody(recv_buffer_);
-  // std::vector<char> response = ProcessRequest(request_);
-  // send_buffer_.insert(response.begin(), response.end());
-
-  send_buffer_.AddString(recv_buffer_.GetString());
-  recv_buffer_.ClearBuff();
-}
-
-bool ConnSocket::IsMessageComplete() const {
-  return true;
-  // if (request_.header_.IsComplete()) {
-  //   return request_.IsComplete(recv_buffer_);
-  // }
-  // // CRLF*2がない場合はヘッダの受信が完了していない
-  // if (!IsContain2CRLF(recv_buffer_)) {
-  //   return false;
-  // }
-  // request_.header_.Parse(recv_buffer_);
-  // return request_.IsComplete(recv_buffer_);
-}
-
 // 0: 引き続きsocketを利用 -1: socketを閉じる
 int ConnSocket::OnReadable() {
   if (!recv_buffer_.ReadSocket(fd_)) {
     return FAILURE;
   }
   std::cout << recv_buffer_.GetString() << std::endl;
-  send_buffer_.AddString(recv_buffer_.GetString());
-  recv_buffer_.ClearBuff();
+  request_.Parse(recv_buffer_);
+  if (request_.GetStatus() == COMPLETE || request_.GetStatus() == ERROR) {
+    Response response = ProcessRequest(request_, config_);
+    send_buffer_.AddString(response.GetString());
+    request_.Clear();
+  }
   return SUCCESS;
 }
 
